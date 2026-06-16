@@ -1388,7 +1388,7 @@ function manageAll(on) {
 async function loadConfig() {
   try {
     const resp = await fetch('./config.json?_=' + Date.now());
-    if (!resp.ok) return; // no config.json — that's fine
+    if (!resp.ok) return;
     const cfg = await resp.json();
     const entries = cfg.indexes || [];
     if (!entries.length) return;
@@ -1398,33 +1398,43 @@ async function loadConfig() {
       const { tableId, varId, contCode, codes } = entry;
       if (!tableId || !varId || !Array.isArray(codes)) continue;
 
-      // Register table in TABLES if not present
-      if (!TABLES.find(t => t.id === tableId)) {
+      // Use a consistent tblKey so multiple varId/contCode combos per tableId are handled
+      const tblKey = `${tableId}__${varId}__${contCode || ''}`;
+
+      if (!TABLES.find(t => t._tblKey === tblKey)) {
+        // Capture varId and contCode in closure correctly
+        const _varId = varId;
+        const _contCode = contCode || null;
         TABLES.push({
           id: tableId,
+          _tblKey: tblKey,
           url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
-          labelKey: varId,
+          labelKey: _varId,
           payload: (period, cds) => ({
             query: [
-              { code: varId, selection: { filter: 'item', values: cds } },
-              ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
-              { code: 'Tid', selection: { filter: 'item', values: [period] } }
+              { code: _varId, selection: { filter: 'item', values: cds } },
+              ...(_contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [_contCode] } }] : []),
+              { code: 'Tid', selection: { filter: 'item', values: Array.isArray(period) ? period : [period] } }
             ],
             response: { format: 'json-stat2' }
           })
         });
       }
 
+      // Group label = "Tabell XXXXX" — clean and consistent
+      const groupLabel = `Tabell ${tableId}`;
+
       for (const { code, label } of codes) {
         const key = `custom-${tableId}-${varId}-${code}`;
         if (INDEX_DEFS.find(d => d.key === key)) continue;
         const def = {
           key, tableId, code,
-          label: `${label} (${tableId})`,
-          shortLabel: label.slice(0, 18),
-          group: `${tableId} – (config)`,
+          label: `${label} (${tableId})`,   // display: "Elektrikararbeid, i alt (08655)"
+          shortLabel: label.slice(0, 22),
+          group: groupLabel,
           _varId: varId,
           _contCode: contCode || null,
+          _tblKey: tblKey,
           _custom: true,
           _fromConfig: true,
         };
@@ -1436,7 +1446,6 @@ async function loadConfig() {
     }
 
     if (loaded > 0) {
-      // Unlock step 3 and show banner
       document.getElementById('step3').classList.remove('locked');
       document.getElementById('step3-num').classList.remove('muted');
       document.getElementById('step3-num').classList.add('done');
@@ -1447,7 +1456,6 @@ async function loadConfig() {
       renderAddedList();
     }
   } catch(e) {
-    // silently ignore — config.json is optional
     console.info('config.json not found or invalid, skipping.');
   }
 }
