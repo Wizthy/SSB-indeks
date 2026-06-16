@@ -176,6 +176,34 @@
     .code-actions button { padding: 4px 10px; font-size: 11px; font-family: inherit; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db; background: none; color: #374151; }
     .code-actions button:hover { background: #f9fafb; }
 
+    /* ── VISUAL EXPLORER ── */
+    .explorer-var { margin-bottom: 18px; }
+    .explorer-var-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .explorer-var-name { font-size: 12px; font-weight: 700; color: #0D2240; text-transform: uppercase; letter-spacing: .5px; }
+    .explorer-var-code { font-size: 10px; font-family: monospace; background: #e5e7eb; color: #6b7280; border-radius: 4px; padding: 1px 6px; }
+    .explorer-var-badge { font-size: 10px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+    .explorer-var-badge.time     { background: #dbeafe; color: #1e40af; }
+    .explorer-var-badge.contents { background: #ede9fe; color: #4c1d95; }
+    .explorer-var-badge.main     { background: #d1fae5; color: #065f46; }
+    .explorer-var-actions { margin-left: auto; display: flex; gap: 4px; }
+    .explorer-var-actions button { padding: 2px 8px; font-size: 10px; font-family: inherit; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db; background: none; color: #374151; }
+    .explorer-var-actions button:hover { background: #f3f4f6; }
+
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+    .exp-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; cursor: pointer; border: 1px solid #e2e4e8; background: #f9fafb; color: #374151; user-select: none; transition: all .1s; white-space: nowrap; }
+    .exp-chip:hover { border-color: #009EB2; background: #f0fdfe; color: #006474; }
+    .exp-chip.selected { background: #009EB2; color: #fff; border-color: #009EB2; }
+    .exp-chip.contents-chip { border-style: dashed; }
+    .exp-chip.contents-chip.selected { background: #7c3aed; border-color: #7c3aed; border-style: solid; }
+    .exp-chip .chip-code { font-family: monospace; font-size: 9px; opacity: .7; }
+    .exp-chip.time-chip { background: #f0f9ff; border-color: #bae6fd; color: #0369a1; cursor: default; font-family: monospace; font-size: 10px; }
+
+    .explorer-add-btn { width: 100%; margin-top: 6px; padding: 10px; border-radius: 6px; background: #009EB2; color: #fff; border: none; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: background .15s; }
+    .explorer-add-btn:hover { background: #0D2240; }
+
+    .time-summary { font-size: 11px; color: #6b7280; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 7px 10px; }
+    .explorer-divider { height: 1px; background: #f3f4f6; margin: 14px 0; }
+
     .added-list { display: flex; flex-direction: column; gap: 6px; }
     .added-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid #e2e4e8; border-radius: 7px; background: #f9fafb; font-size: 12px; }
     .added-item .ai-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
@@ -261,9 +289,6 @@
       </button>
     </div>
     <div style="padding-bottom:1px; display:flex; gap:6px;">
-      <button class="btn btn-ghost" onclick="loadMock()" style="border-color:#fbbf24;color:#92400e">
-        <i class="ti ti-test-pipe" style="margin-right:5px"></i>Testdata
-      </button>
       <button class="btn btn-ghost" onclick="copyTable()" id="copy-btn" style="display:none">
         <i class="ti ti-copy" style="margin-right:5px"></i>Kopier
       </button>
@@ -276,42 +301,7 @@
     <div class="period-badge"><i class="ti ti-calendar"></i><span id="period-label">–</span></div>
     <div class="fetch-meta"><i class="ti ti-clock"></i><span id="fetch-time">–</span></div>
     <div class="metric-grid" id="metric-grid"></div>
-
-    <div class="section-label">Tabell 08655 — Elektro, VVS, Bygg</div>
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">Byggekostnadsindeks — Boliger</div><div class="card-sub">Elektro (20) · VVS (28) · Tømrer (30)</div></div>
-        <span class="tag tag-teal">08655</span>
-      </div>
-      <div class="tbl-wrap"><table id="tbl-08655"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="section-label">Tabell 08651 — Enebolig og blokk</div>
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">Byggekostnadsindeks — Enebolig og blokk</div><div class="card-sub">Enebolig (01) · Blokkleilighet (02)</div></div>
-        <span class="tag tag-teal">08651</span>
-      </div>
-      <div class="tbl-wrap"><table id="tbl-08651"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="section-label">Tabell 04534 — Totalindeks</div>
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">Byggekostnadsindeks — Totalindeks</div><div class="card-sub">Alle byggetyper (1)</div></div>
-        <span class="tag tag-teal">04534</span>
-      </div>
-      <div class="tbl-wrap"><table id="tbl-04534"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
-    </div>
-
-    <div class="section-label">Tabell 08653 — Anlegg</div>
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">Byggekostnadsindeks — Anlegg</div><div class="card-sub">Anleggsvirksomhet (18)</div></div>
-        <span class="tag tag-teal">08653</span>
-      </div>
-      <div class="tbl-wrap"><table id="tbl-08653"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
-    </div>
+    <div id="table-cards"></div>
   </div>
 </div>
 
@@ -356,9 +346,6 @@
       <div style="padding-bottom:1px; display:flex; gap:6px;">
         <button class="btn btn-primary" onclick="fetchGrowth()">
           <i class="ti ti-chart-line" style="margin-right:5px"></i>Hent og analyser
-        </button>
-        <button class="btn btn-ghost" onclick="loadMockGrowth()" style="border-color:#fbbf24;color:#92400e">
-          <i class="ti ti-test-pipe" style="margin-right:5px"></i>Testdata
         </button>
       </div>
     </div>
@@ -440,33 +427,17 @@
       <div id="step1-alert" style="margin-top:10px"></div>
     </div>
 
-    <!-- STEP 2: pick variable + codes -->
+    <!-- STEP 2: visual table explorer -->
     <div class="step locked" id="step2">
       <div class="step-header">
         <div class="step-num muted" id="step2-num">2</div>
-        <div><div class="step-title">Velg variabel og koder</div><div class="step-sub">Velg hvilken dimensjon og hvilke koder du vil følge</div></div>
-      </div>
-
-      <div id="step2-meta" class="meta-box" style="display:none"></div>
-
-      <div class="var-pick-label">Variabel (dimensjon)</div>
-      <select class="var-select" id="var-select" onchange="onVarChange()"></select>
-
-      <div class="var-pick-label">Innholdsvariabel (ContentsCode)</div>
-      <select class="var-select" id="contents-select"></select>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
-        <div class="var-pick-label" style="margin-bottom:0">Koder å legge til</div>
-        <div class="code-actions">
-          <button onclick="codesAll(true)">Velg alle</button>
-          <button onclick="codesAll(false)">Fjern alle</button>
+        <div>
+          <div class="step-title">Utforsk tabell og velg koder</div>
+          <div class="step-sub">Alle variabler fra tabellen vises nedenfor — velg hva du vil følge</div>
         </div>
       </div>
-      <div class="code-grid" id="code-grid"></div>
-
-      <button class="btn btn-primary" onclick="addCodes()" style="width:100%">
-        <i class="ti ti-plus" style="margin-right:5px"></i>Legg til valgte koder som indekser
-      </button>
+      <div id="step2-meta" class="meta-box" style="display:none"></div>
+      <div id="explorer-body"></div>
       <div id="step2-alert" style="margin-top:10px"></div>
     </div>
 
@@ -497,7 +468,7 @@
         <div class="step-num" style="background:#6b7280">4</div>
         <div>
           <div class="step-title">Administrer alle indekser</div>
-          <div class="step-sub">Aktiver, deaktiver eller fjern indekser — inkludert de innebygde</div>
+          <div class="step-sub">Aktiver, deaktiver eller fjern indekser</div>
         </div>
       </div>
       <div id="manage-list"></div>
@@ -526,55 +497,16 @@
 const MONTH_NO = ['','Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
 const MONTH_SHORT = ['','Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
 
-// All 7 index definitions
-const INDEX_DEFS = [
-  { key: '08655-20', tableId: '08655', code: '20', label: 'Elektro (08655)',        shortLabel: 'Elektro',   group: '08655 – Boliger' },
-  { key: '08655-28', tableId: '08655', code: '28', label: 'VVS / Rørlegger (08655)', shortLabel: 'VVS',      group: '08655 – Boliger' },
-  { key: '08655-30', tableId: '08655', code: '30', label: 'Tømrer / Bygg (08655)',   shortLabel: 'Tømrer',   group: '08655 – Boliger' },
-  { key: '08651-01', tableId: '08651', code: '01', label: 'Enebolig (08651)',         shortLabel: 'Enebolig', group: '08651 – Enebolig/Blokk' },
-  { key: '08651-02', tableId: '08651', code: '02', label: 'Blokkleilighet (08651)',   shortLabel: 'Blokk',    group: '08651 – Enebolig/Blokk' },
-  { key: '04534-1',  tableId: '04534', code: '1',  label: 'Totalindeks (04534)',      shortLabel: 'Total',    group: '04534 – Totalindeks' },
-  { key: '08653-18', tableId: '08653', code: '18', label: 'Anlegg (08653)',           shortLabel: 'Anlegg',   group: '08653 – Anlegg' },
-];
+// All index definitions — populated from config.json and the explorer
+const INDEX_DEFS = [];
 
 const CHART_COLORS = [
-  '#009EB2','#0D2240','#f59e0b','#10b981','#8b5cf6','#ef4444','#f97316'
+  '#009EB2','#0D2240','#f59e0b','#10b981','#8b5cf6','#ef4444','#f97316',
+  '#06b6d4','#84cc16','#ec4899','#14b8a6','#a855f7'
 ];
 
-const TABLES = [
-  {
-    id: '08655', url: 'https://data.ssb.no/api/v0/no/table/08655/', labelKey: 'Arbeidstype',
-    payload: (period, codes) => ({ query: [
-      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['20','28','30'] } },
-      { code: 'ContentsCode', selection: { filter: 'item', values: ['Byggindeks'] } },
-      { code: 'Tid', selection: { filter: 'item', values: [period] } }
-    ], response: { format: 'json-stat2' } })
-  },
-  {
-    id: '08651', url: 'https://data.ssb.no/api/v0/no/table/08651/', labelKey: 'Arbeidstype',
-    payload: (period, codes) => ({ query: [
-      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['01','02'] } },
-      { code: 'ContentsCode', selection: { filter: 'item', values: ['Byggindeks'] } },
-      { code: 'Tid', selection: { filter: 'item', values: [period] } }
-    ], response: { format: 'json-stat2' } })
-  },
-  {
-    id: '04534', url: 'https://data.ssb.no/api/v0/no/table/04534/', labelKey: 'ArbType',
-    payload: (period, codes) => ({ query: [
-      { code: 'ArbType', selection: { filter: 'item', values: codes || ['1'] } },
-      { code: 'ContentsCode', selection: { filter: 'item', values: ['ByggKostInd'] } },
-      { code: 'Tid', selection: { filter: 'item', values: [period] } }
-    ], response: { format: 'json-stat2' } })
-  },
-  {
-    id: '08653', url: 'https://data.ssb.no/api/v0/no/table/08653/', labelKey: 'Arbeidstype',
-    payload: (period, codes) => ({ query: [
-      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['18'] } },
-      { code: 'ContentsCode', selection: { filter: 'item', values: ['BKIIndex'] } },
-      { code: 'Tid', selection: { filter: 'item', values: [period] } }
-    ], response: { format: 'json-stat2' } })
-  }
-];
+// All table fetch definitions — populated dynamically
+const TABLES = [];
 
 // ═══════════════════════════════════════════════════════════
 //  NAVIGATION
@@ -659,38 +591,64 @@ function periodLabel(p) {
 
 let _allEntries = [];
 
-function renderTable(tableId, entries, errors) {
-  const tbody = document.querySelector(`#tbl-${tableId} tbody`);
-  if (!tbody) return;
-  if (errors[tableId]) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty"><i class="ti ti-alert-circle" style="color:#f87171;margin-right:6px"></i>Feil: ${errors[tableId]}</td></tr>`;
+function renderOversiktCards(allEntries, errors) {
+  // Group entries by tableId
+  const groups = {};
+  for (const e of allEntries) {
+    if (!groups[e.tableId]) groups[e.tableId] = [];
+    groups[e.tableId].push(e);
+  }
+
+  const container = document.getElementById('table-cards');
+  if (!Object.keys(groups).length) {
+    container.innerHTML = `<div class="empty">Ingen indekser lastet. Legg til tabeller via «Legg til tabell».</div>`;
     return;
   }
-  const rows = entries.filter(e => e.tableId === tableId);
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty">Ingen data.</td></tr>`; return; }
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.label}</td>
-      <td class="tbl-id">${r.code}</td>
-      <td class="val">${r.value !== null ? r.value.toFixed(1) : '—'}</td>
-      <td class="${r.value !== null ? 'status-ok' : 'status-err'}">
-        <i class="ti ${r.value !== null ? 'ti-circle-check' : 'ti-circle-x'}"></i>
-        ${r.value !== null ? 'OK' : 'Mangler'}
-      </td>
-    </tr>`).join('');
+
+  container.innerHTML = Object.entries(groups).map(([tableId, rows]) => {
+    const errMsg = errors[tableId];
+    const tbody = errMsg
+      ? `<tr><td colspan="4" class="empty"><i class="ti ti-alert-circle" style="color:#f87171;margin-right:6px"></i>${errMsg}</td></tr>`
+      : rows.map(r => `<tr>
+          <td>${r.label}</td>
+          <td class="tbl-id">${r.code}</td>
+          <td class="val">${r.value !== null ? r.value.toFixed(1) : '—'}</td>
+          <td class="${r.value !== null ? 'status-ok' : 'status-err'}">
+            <i class="ti ${r.value !== null ? 'ti-circle-check' : 'ti-circle-x'}"></i>
+            ${r.value !== null ? 'OK' : 'Mangler'}
+          </td>
+        </tr>`).join('');
+
+    // Get a group label from INDEX_DEFS
+    const groupLabel = INDEX_DEFS.find(d => d.tableId === tableId)?.group || `Tabell ${tableId}`;
+
+    return `
+      <div class="section-label">${groupLabel}</div>
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">${groupLabel}</div></div>
+          <span class="tag tag-teal">${tableId}</span>
+        </div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Navn</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead>
+          <tbody>${tbody}</tbody></table>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function renderMetrics(allEntries) {
-  const total = allEntries.length;
+  const total   = allEntries.length;
   const withVal = allEntries.filter(e => e.value !== null).length;
-  const vals = allEntries.filter(e => e.value !== null).map(e => e.value);
-  const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+  const vals    = allEntries.filter(e => e.value !== null).map(e => e.value);
+  const avg     = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+  const tblCount = new Set(allEntries.map(e => e.tableId)).size;
   document.getElementById('metric-grid').innerHTML = `
     <div class="metric"><div class="metric-label">Datapunkter</div><div class="metric-value">${total}</div></div>
     <div class="metric"><div class="metric-label">Med verdi</div><div class="metric-value">${withVal}</div></div>
     <div class="metric"><div class="metric-label">Mangler</div><div class="metric-value" style="color:${total-withVal>0?'#dc2626':'#059669'}">${total-withVal}</div></div>
     <div class="metric"><div class="metric-label">Snittindeks</div><div class="metric-value">${avg!==null?avg.toFixed(1):'—'}</div></div>
-    <div class="metric"><div class="metric-label">Tabeller</div><div class="metric-value">4</div></div>`;
+    <div class="metric"><div class="metric-label">Tabeller</div><div class="metric-value">${tblCount}</div></div>`;
 }
 
 function copyTable() {
@@ -698,7 +656,7 @@ function copyTable() {
   const grouped = {};
   for (const e of _allEntries) { if (!grouped[e.tableId]) grouped[e.tableId]=[]; grouped[e.tableId].push(e); }
   for (const [tid, rows] of Object.entries(grouped)) {
-    lines.push(`Tabell ${tid}`,'Arbeidstype\tKode\tIndeksverdi');
+    lines.push(`Tabell ${tid}`,'Navn\tKode\tIndeksverdi');
     for (const r of rows) lines.push(`${r.label}\t${r.code}\t${r.value!==null?r.value.toFixed(1):'N/A'}`);
     lines.push('');
   }
@@ -709,54 +667,52 @@ function copyTable() {
   });
 }
 
-const MOCK_SINGLE = {
-  '08655': [ {code:'20',label:'Elektrisk installasjonsarbeid',value:214.3}, {code:'28',label:'Rørlegger- og VVS-arbeid',value:208.7}, {code:'30',label:'Tømrer- og bygningsarbeid',value:219.1} ],
-  '08651': [ {code:'01',label:'Enebolig',value:216.5}, {code:'02',label:'Blokkleilighet',value:211.8} ],
-  '04534': [ {code:'1',label:'Alle byggetyper (totalindeks)',value:215.2} ],
-  '08653': [ {code:'18',label:'Anleggsvirksomhet',value:203.6} ],
-};
-
-function loadMock() {
-  clearAlert('alert-area');
-  setStatus('green', 'Mock-data');
-  const allEntries = [];
-  for (const [tableId, rows] of Object.entries(MOCK_SINGLE)) for (const r of rows) allEntries.push({...r, tableId});
-  _allEntries = allEntries;
-  const m = document.getElementById('ctrl-month').value;
-  const y = document.getElementById('ctrl-year').value;
-  document.getElementById('period-label').textContent = `${MONTH_NO[parseInt(m)]} ${y}`;
-  document.getElementById('fetch-time').textContent = 'MOCK-DATA — ikke ekte SSB-tall';
-  document.getElementById('results-area').style.display = 'block';
-  document.getElementById('copy-btn').style.display = '';
-  for (const tbl of TABLES) renderTable(tbl.id, allEntries, {});
-  renderMetrics(allEntries);
-  showAlert('alert-area','warn','⚠️ Viser <strong>testdata</strong> — ikke ekte SSB-tall.');
-}
-
 async function fetchAll() {
+  if (!INDEX_DEFS.length) {
+    showAlert('alert-area','warn','Ingen indekser er lagt til ennå. Gå til «Legg til tabell» først.');
+    return;
+  }
   clearAlert('alert-area');
   setLoading(true, 'Henter data fra SSB…');
   setStatus('yellow', 'Henter…');
   const period = getPeriod();
   const [year, month] = period.split('M');
   const allEntries = [], errors = {};
-  await Promise.all(TABLES.map(async tbl => {
+
+  // Group INDEX_DEFS by their TABLES entry (using _tblKey)
+  const tableGroups = {};
+  for (const d of INDEX_DEFS) {
+    const tbl = TABLES.find(t => t.id === d.tableId && (!t._tblKey || t._tblKey === `${d.tableId}__${d._varId}__${d._contCode||''}`));
+    if (!tbl) continue;
+    const gk = tbl._tblKey || tbl.id;
+    if (!tableGroups[gk]) tableGroups[gk] = { tbl, defs: [] };
+    tableGroups[gk].defs.push(d);
+  }
+
+  await Promise.all(Object.values(tableGroups).map(async ({ tbl, defs }) => {
     try {
-      const data = await postSSB(tbl.url, tbl.payload(period));
-      for (const e of parseResult(data, tbl.labelKey)) allEntries.push({...e, tableId: tbl.id});
+      const codes = defs.map(d => d.code);
+      const data  = await postSSB(tbl.url, tbl.payload(period, codes));
+      for (const e of parseResult(data, tbl.labelKey)) {
+        const def = defs.find(d => d.code === e.code);
+        if (def) allEntries.push({ ...e, label: def.label, tableId: tbl.id });
+      }
     } catch(err) { errors[tbl.id] = err.message; }
   }));
+
   setLoading(false);
   const errCount = Object.keys(errors).length;
-  if (errCount === 4) { setStatus('red','SSB utilgjengelig'); showAlert('alert-area','err',`Alle kall feilet. Prøv igjen etter 08:15.`); return; }
-  if (errCount > 0) { setStatus('yellow',`${4-errCount}/4 OK`); showAlert('alert-area','warn',`${errCount} tabell(er) feilet.`); }
+  const tblCount = Object.keys(tableGroups).length;
+  if (errCount === tblCount && tblCount > 0) { setStatus('red','SSB utilgjengelig'); showAlert('alert-area','err','Alle kall feilet. Prøv igjen etter kl. 08:15.'); return; }
+  if (errCount > 0) { setStatus('yellow',`${tblCount-errCount}/${tblCount} OK`); showAlert('alert-area','warn',`${errCount} tabell(er) feilet.`); }
   else { setStatus('green','SSB OK'); clearAlert('alert-area'); }
+
   _allEntries = allEntries;
   document.getElementById('period-label').textContent = `${MONTH_NO[parseInt(month)]} ${year}`;
   document.getElementById('fetch-time').textContent = `Sist hentet: ${new Date().toLocaleTimeString('no-NO')}`;
   document.getElementById('results-area').style.display = 'block';
   document.getElementById('copy-btn').style.display = '';
-  for (const tbl of TABLES) renderTable(tbl.id, allEntries, errors);
+  renderOversiktCards(allEntries, errors);
   renderMetrics(allEntries);
 }
 
@@ -769,7 +725,7 @@ let growthData = {};
 let growthPeriods = [];
 let growthChart = null;
 let chartMode = 'value'; // 'value' | 'change'
-let selectedKeys = new Set(INDEX_DEFS.map(d => d.key));
+let selectedKeys = new Set();
 
 // ── Picker ──────────────────────────────────────────────────
 
@@ -1070,41 +1026,6 @@ async function fetchGrowth() {
   renderGrowthTable();
 }
 
-// ── MOCK GROWTH DATA ──────────────────────────────────────────
-
-function loadMockGrowth() {
-  // Generate 13 months of realistic mock data (Jan 2025 – Jan 2026)
-  const from = '2025M01', to = '2026M01';
-  const periods = periodRange(from, to);
-
-  const BASE = { '08655-20':210.0, '08655-28':204.5, '08655-30':215.0, '08651-01':212.0, '08651-02':207.5, '04534-1':211.0, '08653-18':199.5 };
-  const DRIFT = { '08655-20':0.35,'08655-28':0.30,'08655-30':0.38,'08651-01':0.33,'08651-02':0.28,'04534-1':0.32,'08653-18':0.25 };
-
-  const newData = {};
-  for (const d of INDEX_DEFS) {
-    newData[d.key] = {};
-    let v = BASE[d.key];
-    for (const p of periods) {
-      // small random walk + drift
-      v += DRIFT[d.key] + (Math.random() - 0.45) * 0.4;
-      newData[d.key][p] = +v.toFixed(1);
-    }
-  }
-
-  growthData = newData;
-  growthPeriods = periods;
-
-  document.getElementById('chart-range-label').textContent =
-    `${periodLabel(from)} – ${periodLabel(to)} (${periods.length} måneder) — TESTDATA`;
-
-  document.getElementById('growth-results').style.display = 'block';
-  showAlert('growth-alert','warn','⚠️ Viser <strong>testdata</strong> — ikke ekte SSB-tall.');
-
-  buildPicker();
-  setChartMode('value');
-  renderGrowthTable();
-}
-
 // ═══════════════════════════════════════════════════════════
 //  PAGE 3: LEGG TIL TABELL
 // ═══════════════════════════════════════════════════════════
@@ -1116,7 +1037,7 @@ let customDefs     = [];     // extra INDEX_DEFS entries added by user
 // ── Step 1: fetch metadata ────────────────────────────────────
 
 async function inspectTable() {
-  const rawId = document.getElementById('custom-tbl-id').value.trim().toUpperCase();
+  const rawId = document.getElementById('custom-tbl-id').value.trim();
   if (!rawId) { showAlert('step1-alert','warn','Skriv inn et tabellnummer.'); return; }
 
   clearAlert('step1-alert');
@@ -1124,181 +1045,244 @@ async function inspectTable() {
     `<div style="font-size:12px;color:#6b7280"><span class="mini-spinner"></span>Henter metadata for tabell ${rawId}…</div>`;
 
   try {
-    // SSB metadata endpoint
-    const url = `https://data.ssb.no/api/v0/no/table/${rawId}/`;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: [], response: { format: 'json-stat2' } })
-    });
-    // We actually want the metadata, use GET on the v2 metadata endpoint
-    const metaResp = await fetch(`https://data.ssb.no/api/pxwebapi/v2/tables/${rawId}/metadata?lang=no`);
+    const metaResp = await fetch(`https://data.ssb.no/api/v0/no/table/${rawId}/`);
     if (!metaResp.ok) throw new Error(`Tabell ${rawId} ikke funnet (HTTP ${metaResp.status})`);
     const meta = await metaResp.json();
+    if (!meta.variables || !meta.variables.length) throw new Error('Ingen variabler funnet i tabellen.');
 
     inspectedMeta = meta;
     inspectedId   = rawId;
     clearAlert('step1-alert');
-
-    // Mark step 1 done
     document.getElementById('step1-num').textContent = '✓';
     document.getElementById('step1-num').classList.add('done');
-
-    buildStep2(meta, rawId);
+    buildExplorer(meta, rawId);
 
   } catch(err) {
     showAlert('step1-alert','err',`Kunne ikke hente tabell: ${err.message}`);
   }
 }
 
-// ── Step 2: build variable + code pickers ────────────────────
+// ─────────────────────────────────────────────────────────────
+//  VISUAL EXPLORER
+//  Real v1 schema: { title, variables: [{ code, text, values[], valueTexts[], time }] }
+// ─────────────────────────────────────────────────────────────
 
-function buildStep2(meta, tableId) {
-  // Unlock step 2
+// Holds the current explorer state: which codes are selected per variable
+let explorerState = {};  // { [varCode]: Set of selected codes }
+let explorerMeta  = null;
+
+function buildExplorer(meta, tableId) {
   document.getElementById('step2').classList.remove('locked');
   document.getElementById('step2-num').classList.remove('muted');
   document.getElementById('step2-num').textContent = '2';
 
-  // Meta box
-  const title = meta.label || meta.title || tableId;
   document.getElementById('step2-meta').style.display = '';
   document.getElementById('step2-meta').innerHTML =
-    `<strong>${tableId}</strong> — <span>${title}</span>`;
+    `<strong>${tableId}</strong> — <span>${meta.title || tableId}</span>`;
 
-  // Variables: filter out Tid and ContentsCode for the main var select
+  explorerMeta  = meta;
+  explorerState = {};
+
   const variables = meta.variables || [];
-  const timeVar = variables.find(v => v.elimination === true || v.id === 'Tid' || v.type === 'Time');
-  const contentsVar = variables.find(v => v.id === 'ContentsCode' || v.type === 'Content');
-  const mainVars = variables.filter(v =>
-    v !== timeVar && v !== contentsVar && v.id !== 'Tid' && v.id !== 'ContentsCode'
-  );
+  const timeVar     = variables.find(v => v.time === true);
+  const contentsVar = variables.find(v => v.code === 'ContentsCode');
+  const mainVars    = variables.filter(v => v !== timeVar && v !== contentsVar);
 
-  // Populate var select
-  const varSel = document.getElementById('var-select');
-  varSel.innerHTML = mainVars.map(v => `<option value="${v.id}">${v.label || v.id}</option>`).join('');
-  varSel._vars = mainVars;
-
-  // Populate contents select
-  const contSel = document.getElementById('contents-select');
-  if (contentsVar && contentsVar.values) {
-    contSel.innerHTML = contentsVar.values.map(v => `<option value="${v.code}">${v.label || v.code}</option>`).join('');
-    contSel.style.display = '';
-    contSel.previousElementSibling.style.display = '';
-  } else {
-    contSel.innerHTML = '<option value="">— ingen innholdsvariabel —</option>';
+  // Default: select all codes in every non-time variable; select first ContentsCode
+  for (const v of mainVars) {
+    explorerState[v.code] = new Set(v.values || []);
+  }
+  if (contentsVar?.values?.length) {
+    explorerState['ContentsCode'] = new Set([contentsVar.values[0]]);
   }
 
-  onVarChange();
+  renderExplorer(variables, timeVar, contentsVar, mainVars);
 }
 
-function onVarChange() {
-  const varSel = document.getElementById('var-select');
-  const vars = varSel._vars || [];
-  const selId = varSel.value;
-  const v = vars.find(x => x.id === selId);
+function renderExplorer(variables, timeVar, contentsVar, mainVars) {
+  const body = document.getElementById('explorer-body');
+  let html = '';
+
+  // ── Main variables ────────────────────────────────────────
+  for (const v of mainVars) {
+    const sel = explorerState[v.code] || new Set();
+    html += `
+    <div class="explorer-var">
+      <div class="explorer-var-header">
+        <span class="explorer-var-name">${v.text}</span>
+        <span class="explorer-var-code">${v.code}</span>
+        <span class="explorer-var-badge main">Klassifisering</span>
+        <div class="explorer-var-actions">
+          <button onclick="explorerSelAll('${v.code}', true)">Alle</button>
+          <button onclick="explorerSelAll('${v.code}', false)">Ingen</button>
+        </div>
+      </div>
+      <div class="chip-grid">
+        ${(v.values || []).map((code, i) => {
+          const label = (v.valueTexts || [])[i] || code;
+          const active = sel.has(code);
+          return `<span class="exp-chip ${active ? 'selected' : ''}"
+            onclick="explorerToggle('${v.code}', '${code}', this)"
+            title="${label}">
+            ${label}
+            <span class="chip-code">${code}</span>
+          </span>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="explorer-divider"></div>`;
+  }
+
+  // ── ContentsCode variable ─────────────────────────────────
+  if (contentsVar) {
+    const sel = explorerState['ContentsCode'] || new Set();
+    html += `
+    <div class="explorer-var">
+      <div class="explorer-var-header">
+        <span class="explorer-var-name">${contentsVar.text}</span>
+        <span class="explorer-var-code">ContentsCode</span>
+        <span class="explorer-var-badge contents">Innholdsvariabel</span>
+        <span style="font-size:11px;color:#6b7280;margin-left:4px">— velg én</span>
+      </div>
+      <div class="chip-grid">
+        ${(contentsVar.values || []).map((code, i) => {
+          const label = (contentsVar.valueTexts || [])[i] || code;
+          const active = sel.has(code);
+          return `<span class="exp-chip contents-chip ${active ? 'selected' : ''}"
+            onclick="explorerContents('${code}', this)"
+            title="${label}">
+            ${label}
+            <span class="chip-code">${code}</span>
+          </span>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="explorer-divider"></div>`;
+  }
+
+  // ── Time variable (info only) ─────────────────────────────
+  if (timeVar) {
+    const vals = timeVar.values || [];
+    const first = vals[0] || '?';
+    const last  = vals[vals.length - 1] || '?';
+    html += `
+    <div class="explorer-var">
+      <div class="explorer-var-header">
+        <span class="explorer-var-name">${timeVar.text}</span>
+        <span class="explorer-var-code">${timeVar.code}</span>
+        <span class="explorer-var-badge time">Tidsdimensjon</span>
+      </div>
+      <div class="time-summary">
+        Tilgjengelige perioder: <strong>${first}</strong> → <strong>${last}</strong>
+        (${vals.length} perioder totalt) — styres av tidsrom-velgeren i Vekstanalyse.
+      </div>
+    </div>
+    <div class="explorer-divider"></div>`;
+  }
+
+  // ── Add button ─────────────────────────────────────────────
+  html += `<button class="explorer-add-btn" onclick="addFromExplorer()">
+    <i class="ti ti-plus" style="margin-right:6px"></i>Legg til valgte koder som indekser
+  </button>`;
+
+  body.innerHTML = html;
+}
+
+function explorerToggle(varCode, code, el) {
+  const sel = explorerState[varCode] || (explorerState[varCode] = new Set());
+  if (sel.has(code)) { sel.delete(code); el.classList.remove('selected'); }
+  else               { sel.add(code);    el.classList.add('selected');    }
+}
+
+function explorerContents(code, el) {
+  // Radio behaviour — only one ContentsCode at a time
+  explorerState['ContentsCode'] = new Set([code]);
+  el.closest('.chip-grid').querySelectorAll('.exp-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function explorerSelAll(varCode, on) {
+  const v = (explorerMeta?.variables || []).find(x => x.code === varCode);
   if (!v) return;
-  buildCodeGrid(v);
+  explorerState[varCode] = on ? new Set(v.values || []) : new Set();
+  // Re-render just that variable's chips
+  const chips = document.querySelectorAll(`.exp-chip[onclick*="explorerToggle('${varCode}'"]`);
+  chips.forEach(c => c.classList.toggle('selected', on));
 }
 
-function buildCodeGrid(variable) {
-  const grid = document.getElementById('code-grid');
-  const vals = variable.values || [];
-  grid.innerHTML = vals.map(v => `
-    <label class="code-item" onclick="toggleCodeItem(this)">
-      <input type="checkbox" value="${v.code}" checked>
-      <span>${v.label || v.code}</span>
-      <span class="code-id">${v.code}</span>
-    </label>`).join('');
-  updateCodeSelectionStyle();
-}
+// ── Commit selections → INDEX_DEFS ────────────────────────────
 
-function toggleCodeItem(el) {
-  const cb = el.querySelector('input');
-  // click fires before checkbox state changes, so we invert
-  cb.checked = !cb.checked;
-  el.classList.toggle('selected', cb.checked);
-}
-
-function updateCodeSelectionStyle() {
-  document.querySelectorAll('.code-item').forEach(el => {
-    el.classList.toggle('selected', el.querySelector('input').checked);
-  });
-}
-
-function codesAll(on) {
-  document.querySelectorAll('.code-grid .code-item input').forEach(cb => cb.checked = on);
-  updateCodeSelectionStyle();
-}
-
-// ── Step 3: add selected codes as index entries ───────────────
-
-function addCodes() {
+function addFromExplorer() {
   clearAlert('step2-alert');
-  const varSel   = document.getElementById('var-select');
-  const contSel  = document.getElementById('contents-select');
-  const varId    = varSel.value;
-  const vars     = varSel._vars || [];
-  const variable = vars.find(x => x.id === varId);
-  const contCode = contSel.value || null;
-  const tableId  = inspectedId;
-  const tableTitle = (inspectedMeta?.label || tableId).slice(0, 40);
+  const tableId    = inspectedId;
+  const meta       = explorerMeta;
+  const variables  = meta.variables || [];
+  const timeVar    = variables.find(v => v.time === true);
+  const contentsVar = variables.find(v => v.code === 'ContentsCode');
+  const mainVars   = variables.filter(v => v !== timeVar && v !== contentsVar);
+  const tableTitle = (meta.title || tableId).slice(0, 40);
 
-  const checked = [...document.querySelectorAll('.code-grid .code-item input:checked')];
-  if (!checked.length) { showAlert('step2-alert','warn','Velg minst én kode.'); return; }
+  const contCode = contentsVar
+    ? [...(explorerState['ContentsCode'] || [])][0] || contentsVar.values[0]
+    : null;
 
   let added = 0;
-  for (const cb of checked) {
-    const code  = cb.value;
-    const label = (variable?.values?.find(v => v.code === code)?.label || code);
-    const key   = `custom-${tableId}-${varId}-${code}`;
+  for (const v of mainVars) {
+    const selCodes = [...(explorerState[v.code] || [])];
+    if (!selCodes.length) continue;
 
-    // Skip duplicates
-    if (INDEX_DEFS.find(d => d.key === key)) continue;
+    const varId = v.code;
 
-    const colorIdx = (INDEX_DEFS.length) % CHART_COLORS.length;
-    const shortLabel = `${label.slice(0,18)} (${tableId})`;
-    const group  = `${tableId} – ${tableTitle}`;
+    // Register table in TABLES if not already there (keyed by tableId+varId+contCode)
+    const tblKey = `${tableId}__${varId}__${contCode || ''}`;
+    if (!TABLES.find(t => t._tblKey === tblKey)) {
+      TABLES.push({
+        id: tableId,
+        _tblKey: tblKey,
+        url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
+        labelKey: varId,
+        payload: (period, codes) => ({
+          query: [
+            { code: varId, selection: { filter: 'item', values: codes } },
+            ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
+            { code: 'Tid', selection: { filter: 'item', values: Array.isArray(period) ? period : [period] } }
+          ],
+          response: { format: 'json-stat2' }
+        })
+      });
+    }
 
-    const def = {
-      key, tableId, code,
-      label: `${label} (${tableId})`,
-      shortLabel,
-      group,
-      // Extra fields needed to build the SSB payload for custom tables
-      _varId: varId,
-      _contCode: contCode,
-      _custom: true,
-    };
+    for (const code of selCodes) {
+      const key = `custom-${tableId}-${varId}-${code}`;
+      if (INDEX_DEFS.find(d => d.key === key)) continue;
 
-    INDEX_DEFS.push(def);
-    selectedKeys.add(key);
-    customDefs.push(def);
-    added++;
+      const label = (v.valueTexts || [])[(v.values || []).indexOf(code)] || code;
+      const contLabel = contCode
+        ? (contentsVar?.valueTexts || [])[contentsVar.values.indexOf(contCode)] || contCode
+        : '';
+
+      const def = {
+        key, tableId, code,
+        label: `${label} (${tableId})`,
+        shortLabel: label.slice(0, 20),
+        group: `${tableId} – ${tableTitle}`,
+        _varId: varId,
+        _contCode: contCode,
+        _custom: true,
+      };
+
+      INDEX_DEFS.push(def);
+      selectedKeys.add(key);
+      customDefs.push(def);
+      added++;
+    }
   }
 
-  if (!added) { showAlert('step2-alert','info','Alle valgte koder er allerede lagt til.'); return; }
+  if (!added) { showAlert('step2-alert','info','Alle valgte koder er allerede lagt til, eller ingen er valgt.'); return; }
 
-  // Also register the table in TABLES if not already there
-  if (!TABLES.find(t => t.id === tableId)) {
-    TABLES.push({
-      id: tableId,
-      url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
-      labelKey: varId,
-      payload: (period, codes) => ({
-        query: [
-          { code: varId, selection: { filter: 'item', values: codes || [checked[0].value] } },
-          ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
-          { code: 'Tid', selection: { filter: 'item', values: [period] } }
-        ],
-        response: { format: 'json-stat2' }
-      })
-    });
-  }
-
-  showAlert('step2-alert','info',`✓ ${added} indeks(er) lagt til.`);
+  showAlert('step2-alert','info',`✓ ${added} indeks(er) lagt til — se steg 3.`);
   renderAddedList();
 
-  // Unlock step 3
   document.getElementById('step3').classList.remove('locked');
   document.getElementById('step3-num').classList.remove('muted');
   document.getElementById('step3-num').classList.add('done');
@@ -1349,17 +1333,15 @@ function renderManageList() {
     for (const d of defs) {
       const color   = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
       const active  = selectedKeys.has(d.key);
-      const isBuiltIn = !d._custom;
       html += `<div class="manage-item ${active ? '' : 'disabled'}" id="mi-${d.key}">
         <span class="mi-swatch" style="background:${color}"></span>
         <span class="mi-label">${d.label}</span>
         <span class="mi-tag">${d.tableId} · ${d.code}</span>
-        ${isBuiltIn ? `<span class="mi-built">innebygd</span>` : ''}
         <label class="manage-toggle" title="${active ? 'Deaktiver' : 'Aktiver'}">
           <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleManage('${d.key}', this.checked)">
           <span class="manage-toggle-track"></span>
         </label>
-        <button class="mi-remove" onclick="removeAnyDef('${d.key}')" title="Fjern permanent" ${isBuiltIn ? 'disabled' : ''}>✕</button>
+        <button class="mi-remove" onclick="removeAnyDef('${d.key}')" title="Fjern permanent">✕</button>
       </div>`;
     }
   }
