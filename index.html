@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SSB Indeksverdier – Bravida</title>
+  <title>SSB Indeksverktøy</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
@@ -238,12 +238,7 @@
 
 <!-- TOP BAR -->
 <div class="topbar">
-  <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-    <polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".3"/>
-    <polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/>
-  </svg>
-  <strong>Bravida</strong>
-  <span>SSB Indeksverktøy</span>
+  <strong>SSB Indeksverktøy</strong>
   <div class="db-status" id="api-status">
     <div class="dot yellow" id="status-dot"></div>
     <span id="status-text">Ikke hentet</span>
@@ -253,11 +248,7 @@
 <!-- NAVBAR -->
 <div class="navbar">
   <div class="nav-logo">
-    <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-      <polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".15"/>
-      <polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/>
-    </svg>
-    <span style="font-size:16px;font-weight:700;color:#0D2240;letter-spacing:-.5px">Bravida</span>
+    <span style="font-size:16px;font-weight:700;color:#0D2240;letter-spacing:-.5px">SSB Indekser</span>
   </div>
   <button class="nav-btn active" onclick="showPage('oversikt', this)">Oversikt</button>
   <button class="nav-btn" onclick="showPage('vekst', this)">Vekstanalyse</button>
@@ -492,57 +483,57 @@
 </div>
 
 <script>
+"use strict";
 // ═══════════════════════════════════════════════════════════
-//  CONSTANTS & CONFIG
+//  SSB INDEKSVERKTØY — applogikk
+//  Datakilde: data.ssb.no PxWebApi v0 (json-stat2)
 // ═══════════════════════════════════════════════════════════
 
-const MONTH_NO = ['','Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+// ── Konstanter ───────────────────────────────────────────────
+const SSB_BASE = 'https://data.ssb.no/api/v0/no/table';
+const MONTH_NO    = ['','Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
 const MONTH_SHORT = ['','Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
-
-// All index definitions — populated from config.json and the explorer
-const INDEX_DEFS = [];
-
 const CHART_COLORS = [
   '#009EB2','#0D2240','#f59e0b','#10b981','#8b5cf6','#ef4444','#f97316',
   '#06b6d4','#84cc16','#ec4899','#14b8a6','#a855f7'
 ];
 
-// All table fetch definitions — populated dynamically
-const TABLES = [];
+// ── Tilstand ─────────────────────────────────────────────────
+const INDEX_DEFS = [];     // alle indekser (fra config + explorer)
+const TABLES     = [];     // unike SSB-spørringer, nøklet på _tblKey
+let   customDefs = [];     // delmengde av INDEX_DEFS lagt til av bruker/config
+let   selectedKeys = new Set();
+let   colorCursor  = 0;    // stabil fargetildeling — flyttes ikke ved sletting
 
-// ═══════════════════════════════════════════════════════════
-//  NAVIGATION
-// ═══════════════════════════════════════════════════════════
+let growthData    = {};    // { [key]: { [period]: value|null } }
+let growthPeriods = [];
+let growthChart   = null;
+let chartMode     = 'value';
 
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  btn.classList.add('active');
+let _allEntries = [];      // siste Oversikt-resultat (for kopiering)
+
+// ── Små hjelpere ─────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SHARED HELPERS
-// ═══════════════════════════════════════════════════════════
-
-function getPeriod() {
-  return `${document.getElementById('ctrl-year').value}M${document.getElementById('ctrl-month').value}`;
-}
+function getPeriod() { return `${$('ctrl-year').value}M${$('ctrl-month').value}`; }
 
 function setLoading(on, text) {
-  document.getElementById('loading-overlay').classList.toggle('show', on);
-  if (text) document.getElementById('loading-text').textContent = text;
+  $('loading-overlay').classList.toggle('show', on);
+  if (text) $('loading-text').textContent = text;
 }
-
 function setStatus(state, text) {
-  document.getElementById('status-dot').className = 'dot ' + state;
-  document.getElementById('status-text').textContent = text;
+  $('status-dot').className = 'dot ' + state;
+  $('status-text').textContent = text;
 }
-
 function showAlert(areaId, type, msg) {
-  document.getElementById(areaId).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  $(areaId).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
 }
-function clearAlert(areaId) { document.getElementById(areaId).innerHTML = ''; }
+function clearAlert(areaId) { $(areaId).innerHTML = ''; }
 
 async function postSSB(url, payload) {
   const resp = await fetch(url, {
@@ -554,66 +545,130 @@ async function postSSB(url, payload) {
   return resp.json();
 }
 
-function parseResult(data, labelKey) {
-  const values = data.value || [];
-  const dim = data.dimension || {};
-  const dimKey = dim[labelKey] || {};
-  const cat = dimKey.category || {};
-  const labelSection = cat.label || {};
-  const indexSection = cat.index || {};
-  const keys = Object.keys(labelSection).sort((a,b) => (indexSection[a]??0) - (indexSection[b]??0));
-  return keys.map((key, i) => ({
-    code: key,
-    label: labelSection[key],
-    value: (values[i] !== null && values[i] !== undefined) ? values[i] : null
-  }));
-}
-
-// Generate all month periods between two period strings "YYYYMmm"
+// Period-streng "YYYYMmm" → liste fra→til (inkl.)
 function periodRange(from, to) {
   const [fy, fm] = from.split('M').map(Number);
   const [ty, tm] = to.split('M').map(Number);
-  const periods = [];
+  const out = [];
   let y = fy, m = fm;
   while (y < ty || (y === ty && m <= tm)) {
-    periods.push(`${y}M${String(m).padStart(2,'0')}`);
-    m++; if (m > 12) { m = 1; y++; }
+    out.push(`${y}M${String(m).padStart(2,'0')}`);
+    if (++m > 12) { m = 1; y++; }
   }
-  return periods;
+  return out;
 }
-
 function periodLabel(p) {
   const [y, m] = p.split('M');
-  return `${MONTH_SHORT[parseInt(m)]} ${y}`;
+  return `${MONTH_SHORT[parseInt(m, 10)]} ${y}`;
+}
+
+// ── Felles registrering av tabeller og indekser ──────────────
+// Sikrer at samme (tableId, varId, contCode)-kombo gir én TABLES-oppføring.
+function registerTable(tableId, varId, contCode) {
+  const tblKey = `${tableId}__${varId}__${contCode || ''}`;
+  let tbl = TABLES.find(t => t._tblKey === tblKey);
+  if (tbl) return tbl;
+  const _varId = varId, _contCode = contCode || null;
+  tbl = {
+    id: tableId,
+    _tblKey: tblKey,
+    labelKey: _varId,
+    url: `${SSB_BASE}/${tableId}/`,
+    payload: (period, codes) => ({
+      query: [
+        { code: _varId, selection: { filter: 'item', values: codes } },
+        ...(_contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [_contCode] } }] : []),
+        { code: 'Tid', selection: { filter: 'item', values: Array.isArray(period) ? period : [period] } }
+      ],
+      response: { format: 'json-stat2' }
+    })
+  };
+  TABLES.push(tbl);
+  return tbl;
+}
+
+// Lager (og registrerer) en indeksdefinisjon. Returnerer null ved duplikat.
+function makeDef({ tableId, varId, contCode, code, baseLabel }) {
+  const key = `custom-${tableId}-${varId}-${code}`;
+  if (INDEX_DEFS.find(d => d.key === key)) return null;
+  registerTable(tableId, varId, contCode);
+  const def = {
+    key, tableId, code,
+    baseLabel,                                    // ren etikett (for config-eksport)
+    label: `${baseLabel} (${tableId})`,           // visning
+    shortLabel: baseLabel.slice(0, 22),
+    group: `Tabell ${tableId}`,
+    _varId: varId,
+    _contCode: contCode || null,
+    _tblKey: `${tableId}__${varId}__${contCode || ''}`,
+    _color: CHART_COLORS[colorCursor++ % CHART_COLORS.length],
+    _custom: true,
+  };
+  INDEX_DEFS.push(def);
+  customDefs.push(def);
+  return def;
+}
+
+function removeDef(key) {
+  let i = INDEX_DEFS.findIndex(d => d.key === key);
+  if (i !== -1) INDEX_DEFS.splice(i, 1);
+  i = customDefs.findIndex(d => d.key === key);
+  if (i !== -1) customDefs.splice(i, 1);
+  selectedKeys.delete(key);
+  // Behold ubrukte TABLES-oppføringer ryddet
+  const liveKeys = new Set(INDEX_DEFS.map(d => d._tblKey));
+  for (let j = TABLES.length - 1; j >= 0; j--) {
+    if (!liveKeys.has(TABLES[j]._tblKey)) TABLES.splice(j, 1);
+  }
+}
+
+// json-stat2: parse én tidsperiode → [{ code, label, value }]
+function parseSingle(data, labelKey) {
+  const cat = data.dimension?.[labelKey]?.category || {};
+  const labels = cat.label || {};
+  const idx    = cat.index || {};
+  const values = data.value || [];
+  return Object.keys(labels)
+    .sort((a, b) => (idx[a] ?? 0) - (idx[b] ?? 0))
+    .map((code, i) => ({
+      code,
+      label: labels[code],
+      value: (values[i] ?? null)
+    }));
 }
 
 // ═══════════════════════════════════════════════════════════
-//  PAGE 1: OVERSIKT
+//  NAVIGASJON
 // ═══════════════════════════════════════════════════════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  $('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
 
-let _allEntries = [];
-
+// ═══════════════════════════════════════════════════════════
+//  SIDE 1: OVERSIKT
+// ═══════════════════════════════════════════════════════════
 function renderOversiktCards(allEntries, errors) {
-  // Group entries by tableId
   const groups = {};
-  for (const e of allEntries) {
-    if (!groups[e.tableId]) groups[e.tableId] = [];
-    groups[e.tableId].push(e);
-  }
+  for (const e of allEntries) (groups[e.tableId] ||= []).push(e);
 
-  const container = document.getElementById('table-cards');
-  if (!Object.keys(groups).length) {
+  const container = $('table-cards');
+  const tableIds = new Set([...Object.keys(groups), ...Object.keys(errors)]);
+  if (!tableIds.size) {
     container.innerHTML = `<div class="empty">Ingen indekser lastet. Legg til tabeller via «Legg til tabell».</div>`;
     return;
   }
 
-  container.innerHTML = Object.entries(groups).map(([tableId, rows]) => {
+  container.innerHTML = [...tableIds].map(tableId => {
+    const rows = groups[tableId] || [];
     const errMsg = errors[tableId];
-    const tbody = errMsg
-      ? `<tr><td colspan="4" class="empty"><i class="ti ti-alert-circle" style="color:#f87171;margin-right:6px"></i>${errMsg}</td></tr>`
+    const body = errMsg
+      ? `<tr><td colspan="4" class="empty"><i class="ti ti-alert-circle" style="color:#f87171;margin-right:6px"></i>${escapeHtml(errMsg)}</td></tr>`
       : rows.map(r => `<tr>
-          <td>${r.label}</td>
-          <td class="tbl-id">${r.code}</td>
+          <td>${escapeHtml(r.label)}</td>
+          <td class="tbl-id">${escapeHtml(r.code)}</td>
           <td class="val">${r.value !== null ? r.value.toFixed(1) : '—'}</td>
           <td class="${r.value !== null ? 'status-ok' : 'status-err'}">
             <i class="ti ${r.value !== null ? 'ti-circle-check' : 'ti-circle-x'}"></i>
@@ -621,52 +676,65 @@ function renderOversiktCards(allEntries, errors) {
           </td>
         </tr>`).join('');
 
-    // Get a group label from INDEX_DEFS
     const groupLabel = INDEX_DEFS.find(d => d.tableId === tableId)?.group || `Tabell ${tableId}`;
-
     return `
-      <div class="section-label">${groupLabel}</div>
+      <div class="section-label">${escapeHtml(groupLabel)}</div>
       <div class="card">
         <div class="card-head">
-          <div><div class="card-title">${groupLabel}</div></div>
-          <span class="tag tag-teal">${tableId}</span>
+          <div><div class="card-title">${escapeHtml(groupLabel)}</div></div>
+          <span class="tag tag-teal">${escapeHtml(tableId)}</span>
         </div>
         <div class="tbl-wrap">
           <table><thead><tr><th>Navn</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead>
-          <tbody>${tbody}</tbody></table>
+          <tbody>${body}</tbody></table>
         </div>
       </div>`;
   }).join('');
 }
 
 function renderMetrics(allEntries) {
-  const total   = allEntries.length;
-  const withVal = allEntries.filter(e => e.value !== null).length;
-  const vals    = allEntries.filter(e => e.value !== null).map(e => e.value);
-  const avg     = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-  const tblCount = new Set(allEntries.map(e => e.tableId)).size;
-  document.getElementById('metric-grid').innerHTML = `
+  let withVal = 0, sum = 0;
+  const tbls = new Set();
+  for (const e of allEntries) {
+    tbls.add(e.tableId);
+    if (e.value !== null) { withVal++; sum += e.value; }
+  }
+  const total = allEntries.length;
+  const avg = withVal ? sum / withVal : null;
+  $('metric-grid').innerHTML = `
     <div class="metric"><div class="metric-label">Datapunkter</div><div class="metric-value">${total}</div></div>
     <div class="metric"><div class="metric-label">Med verdi</div><div class="metric-value">${withVal}</div></div>
     <div class="metric"><div class="metric-label">Mangler</div><div class="metric-value" style="color:${total-withVal>0?'#dc2626':'#059669'}">${total-withVal}</div></div>
     <div class="metric"><div class="metric-label">Snittindeks</div><div class="metric-value">${avg!==null?avg.toFixed(1):'—'}</div></div>
-    <div class="metric"><div class="metric-label">Tabeller</div><div class="metric-value">${tblCount}</div></div>`;
+    <div class="metric"><div class="metric-label">Tabeller</div><div class="metric-value">${tbls.size}</div></div>`;
 }
 
 function copyTable() {
   const lines = [`SSB Indeksverdier – ${getPeriod()}`, ''];
   const grouped = {};
-  for (const e of _allEntries) { if (!grouped[e.tableId]) grouped[e.tableId]=[]; grouped[e.tableId].push(e); }
+  for (const e of _allEntries) (grouped[e.tableId] ||= []).push(e);
   for (const [tid, rows] of Object.entries(grouped)) {
-    lines.push(`Tabell ${tid}`,'Navn\tKode\tIndeksverdi');
+    lines.push(`Tabell ${tid}`, 'Navn\tKode\tIndeksverdi');
     for (const r of rows) lines.push(`${r.label}\t${r.code}\t${r.value!==null?r.value.toFixed(1):'N/A'}`);
     lines.push('');
   }
   navigator.clipboard.writeText(lines.join('\n')).then(() => {
-    const btn = document.getElementById('copy-btn');
+    const btn = $('copy-btn');
     btn.innerHTML = '<i class="ti ti-check" style="margin-right:5px"></i>Kopiert!';
     setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy" style="margin-right:5px"></i>Kopier'; }, 2000);
   });
+}
+
+// Grupperer aktive defs på TABLES-oppføring (via _tblKey)
+function groupDefsByTable(defs) {
+  const groups = new Map();
+  for (const d of defs) {
+    const tbl = TABLES.find(t => t._tblKey === d._tblKey);
+    if (!tbl) continue;
+    if (!groups.has(tbl._tblKey)) groups.set(tbl._tblKey, { tbl, defs: [] });
+    groups.get(tbl._tblKey).defs.push(d);
+  }
+  return [...groups.values()];
 }
 
 async function fetchAll() {
@@ -677,81 +745,70 @@ async function fetchAll() {
   clearAlert('alert-area');
   setLoading(true, 'Henter data fra SSB…');
   setStatus('yellow', 'Henter…');
+
   const period = getPeriod();
   const [year, month] = period.split('M');
   const allEntries = [], errors = {};
+  const groups = groupDefsByTable(INDEX_DEFS);
 
-  // Group INDEX_DEFS by their TABLES entry (using _tblKey)
-  const tableGroups = {};
-  for (const d of INDEX_DEFS) {
-    const tbl = TABLES.find(t => t.id === d.tableId && (!t._tblKey || t._tblKey === `${d.tableId}__${d._varId}__${d._contCode||''}`));
-    if (!tbl) continue;
-    const gk = tbl._tblKey || tbl.id;
-    if (!tableGroups[gk]) tableGroups[gk] = { tbl, defs: [] };
-    tableGroups[gk].defs.push(d);
-  }
-
-  await Promise.all(Object.values(tableGroups).map(async ({ tbl, defs }) => {
+  await Promise.all(groups.map(async ({ tbl, defs }) => {
     try {
       const codes = defs.map(d => d.code);
       const data  = await postSSB(tbl.url, tbl.payload(period, codes));
-      for (const e of parseResult(data, tbl.labelKey)) {
-        const def = defs.find(d => d.code === e.code);
-        if (def) allEntries.push({ ...e, label: def.label, tableId: tbl.id });
+      const byCode = new Map(parseSingle(data, tbl.labelKey).map(e => [e.code, e]));
+      for (const d of defs) {
+        const e = byCode.get(d.code);
+        allEntries.push({ code: d.code, label: d.label, tableId: tbl.id, value: e ? e.value : null });
       }
-    } catch(err) { errors[tbl.id] = err.message; }
+    } catch (err) {
+      errors[tbl.id] = err.message;
+    }
   }));
 
   setLoading(false);
   const errCount = Object.keys(errors).length;
-  const tblCount = Object.keys(tableGroups).length;
-  if (errCount === tblCount && tblCount > 0) { setStatus('red','SSB utilgjengelig'); showAlert('alert-area','err','Alle kall feilet. Prøv igjen etter kl. 08:15.'); return; }
-  if (errCount > 0) { setStatus('yellow',`${tblCount-errCount}/${tblCount} OK`); showAlert('alert-area','warn',`${errCount} tabell(er) feilet.`); }
-  else { setStatus('green','SSB OK'); clearAlert('alert-area'); }
+  const tblCount = groups.length;
+  if (errCount && errCount === tblCount) {
+    setStatus('red','SSB utilgjengelig');
+    showAlert('alert-area','err','Alle kall feilet. Sjekk nettverk eller prøv igjen etter kl. 08:15.');
+  } else if (errCount) {
+    setStatus('yellow', `${tblCount-errCount}/${tblCount} OK`);
+    showAlert('alert-area','warn',`${errCount} tabell(er) feilet.`);
+  } else {
+    setStatus('green','SSB OK');
+    clearAlert('alert-area');
+  }
 
   _allEntries = allEntries;
-  document.getElementById('period-label').textContent = `${MONTH_NO[parseInt(month)]} ${year}`;
-  document.getElementById('fetch-time').textContent = `Sist hentet: ${new Date().toLocaleTimeString('no-NO')}`;
-  document.getElementById('results-area').style.display = 'block';
-  document.getElementById('copy-btn').style.display = '';
+  $('period-label').textContent = `${MONTH_NO[parseInt(month,10)]} ${year}`;
+  $('fetch-time').textContent = `Sist hentet: ${new Date().toLocaleTimeString('no-NO')}`;
+  $('results-area').style.display = 'block';
+  $('copy-btn').style.display = '';
   renderOversiktCards(allEntries, errors);
   renderMetrics(allEntries);
 }
 
 // ═══════════════════════════════════════════════════════════
-//  PAGE 2: VEKSTANALYSE
+//  SIDE 2: VEKSTANALYSE
 // ═══════════════════════════════════════════════════════════
-
-// growthData: { [indexKey]: { [period]: value } }
-let growthData = {};
-let growthPeriods = [];
-let growthChart = null;
-let chartMode = 'value'; // 'value' | 'change'
-let selectedKeys = new Set();
-
-// ── Picker ──────────────────────────────────────────────────
+function activeDefs() { return INDEX_DEFS.filter(d => selectedKeys.has(d.key)); }
 
 function buildPicker() {
-  const list = document.getElementById('picker-list');
   const groups = {};
-  for (const d of INDEX_DEFS) {
-    if (!groups[d.group]) groups[d.group] = [];
-    groups[d.group].push(d);
-  }
+  for (const d of INDEX_DEFS) (groups[d.group] ||= []).push(d);
   let html = '';
   for (const [grp, defs] of Object.entries(groups)) {
-    html += `<div class="picker-group-label">${grp}</div>`;
+    html += `<div class="picker-group-label">${escapeHtml(grp)}</div>`;
     for (const d of defs) {
-      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
-      const checked = selectedKeys.has(d.key) ? 'checked' : '';
       html += `<label class="picker-item">
-        <input type="checkbox" value="${d.key}" ${checked} onchange="pickerToggle('${d.key}', this.checked)">
-        <span class="picker-swatch" style="background:${color}"></span>
-        ${d.label}
+        <input type="checkbox" value="${escapeHtml(d.key)}" ${selectedKeys.has(d.key)?'checked':''}
+               onchange="pickerToggle('${d.key}', this.checked)">
+        <span class="picker-swatch" style="background:${d._color}"></span>
+        ${escapeHtml(d.label)}
       </label>`;
     }
   }
-  list.innerHTML = html;
+  $('picker-list').innerHTML = html;
 }
 
 function pickerToggle(key, checked) {
@@ -761,53 +818,43 @@ function pickerToggle(key, checked) {
 }
 
 function pickerAll(on) {
-  selectedKeys = on ? new Set(INDEX_DEFS.map(d=>d.key)) : new Set();
+  selectedKeys = on ? new Set(INDEX_DEFS.map(d => d.key)) : new Set();
   document.querySelectorAll('#picker-list input[type=checkbox]').forEach(cb => cb.checked = on);
   renderGrowthChart();
   renderGrowthTable();
 }
 
-// ── Chart ───────────────────────────────────────────────────
-
 function setChartMode(mode) {
   chartMode = mode;
-  document.getElementById('btn-mode-value').style.borderColor = mode==='value' ? '#009EB2' : '';
-  document.getElementById('btn-mode-value').style.color = mode==='value' ? '#009EB2' : '';
-  document.getElementById('btn-mode-change').style.borderColor = mode==='change' ? '#009EB2' : '';
-  document.getElementById('btn-mode-change').style.color = mode==='change' ? '#009EB2' : '';
+  for (const m of ['value','change']) {
+    const btn = $('btn-mode-' + m);
+    btn.style.borderColor = (mode === m) ? '#009EB2' : '';
+    btn.style.color       = (mode === m) ? '#009EB2' : '';
+  }
   renderGrowthChart();
 }
 
 function renderGrowthChart() {
-  const ctx = document.getElementById('growth-chart').getContext('2d');
+  const ctx = $('growth-chart').getContext('2d');
   const labels = growthPeriods.map(periodLabel);
 
-  const datasets = INDEX_DEFS
-    .filter(d => selectedKeys.has(d.key))
-    .map((d, i) => {
-      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
-      const raw = growthPeriods.map(p => growthData[d.key]?.[p] ?? null);
-      let data;
-      if (chartMode === 'change') {
-        data = raw.map((v, i) => {
-          if (i === 0 || v === null || raw[i-1] === null) return null;
-          return +(v - raw[i-1]).toFixed(2);
-        });
-      } else {
-        data = raw;
-      }
-      return {
-        label: d.shortLabel,
-        data,
-        borderColor: color,
-        backgroundColor: color + '18',
-        borderWidth: 2,
-        pointRadius: growthPeriods.length <= 12 ? 4 : 2,
-        pointHoverRadius: 6,
-        tension: 0.3,
-        spanGaps: false,
-      };
-    });
+  const datasets = activeDefs().map(d => {
+    const raw = growthPeriods.map(p => growthData[d.key]?.[p] ?? null);
+    const data = chartMode === 'change'
+      ? raw.map((v, i) => (i === 0 || v === null || raw[i-1] === null) ? null : +(v - raw[i-1]).toFixed(2))
+      : raw;
+    return {
+      label: d.shortLabel,
+      data,
+      borderColor: d._color,
+      backgroundColor: d._color + '22',
+      borderWidth: 2,
+      pointRadius: growthPeriods.length <= 12 ? 4 : 2,
+      pointHoverRadius: 6,
+      tension: 0.3,
+      spanGaps: false,
+    };
+  });
 
   if (growthChart) growthChart.destroy();
   growthChart = new Chart(ctx, {
@@ -819,89 +866,58 @@ function renderGrowthChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const v = ctx.parsed.y;
-              if (v === null) return `${ctx.dataset.label}: –`;
-              return chartMode === 'change'
-                ? `${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)}`
-                : `${ctx.dataset.label}: ${v.toFixed(1)}`;
-            }
-          }
-        }
+        tooltip: { callbacks: { label: c => {
+          const v = c.parsed.y;
+          if (v === null) return `${c.dataset.label}: –`;
+          return chartMode === 'change'
+            ? `${c.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)}`
+            : `${c.dataset.label}: ${v.toFixed(1)}`;
+        }}}
       },
       scales: {
         x: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 } } },
-        y: {
-          grid: { color: '#f3f4f6' },
-          ticks: { font: { size: 11 },
-            callback: v => chartMode === 'change' ? (v >= 0 ? '+' : '') + v.toFixed(1) : v.toFixed(1)
-          }
-        }
+        y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 },
+          callback: v => chartMode === 'change' ? (v >= 0 ? '+' : '') + v.toFixed(1) : v.toFixed(1) } }
       }
     }
   });
 }
 
-// ── Growth Table ─────────────────────────────────────────────
+function changeChip(change, first) {
+  if (change === null) return `<span class="chip-none">–</span>`;
+  if (change > 0) return `<span class="chip-pos"><i class="ti ti-arrow-up" style="font-size:10px"></i>+${change.toFixed(2)}</span>`;
+  if (change < 0) return `<span class="chip-neg"><i class="ti ti-arrow-down" style="font-size:10px"></i>${change.toFixed(2)}</span>`;
+  return `<span class="chip-zero">±0.00</span>`;
+}
 
 function renderGrowthTable() {
-  const activeDefs = INDEX_DEFS.filter(d => selectedKeys.has(d.key));
-  const thead = document.getElementById('growth-thead');
-  const tbody = document.getElementById('growth-tbody');
+  const defs  = activeDefs();
+  const thead = $('growth-thead');
+  const tbody = $('growth-tbody');
 
-  if (!activeDefs.length || !growthPeriods.length) {
+  if (!defs.length || !growthPeriods.length) {
     thead.innerHTML = '';
     tbody.innerHTML = `<tr><td class="empty" colspan="3">Ingen indekser valgt.</td></tr>`;
     return;
   }
 
-  // ── HEADER: blank stub | one month column per period ──────────
-  // Row 1: "Indeks" | Jan 2025 | Feb 2025 | …
-  let hRow = `<tr><th style="min-width:160px">Indeks</th>`;
-  for (let i = 0; i < growthPeriods.length; i++) {
-    hRow += `<th colspan="2" style="text-align:center; border-left:1px solid #e2e4e8">${periodLabel(growthPeriods[i])}</th>`;
+  let h1 = `<tr><th style="min-width:160px">Indeks</th>`;
+  let h2 = `<tr><th></th>`;
+  for (const p of growthPeriods) {
+    h1 += `<th colspan="2" style="text-align:center; border-left:1px solid #e2e4e8">${periodLabel(p)}</th>`;
+    h2 += `<th style="font-size:9px; border-left:1px solid #e2e4e8">Verdi</th><th style="font-size:9px">Endring</th>`;
   }
-  hRow += `</tr>`;
+  thead.innerHTML = h1 + '</tr>' + h2 + '</tr>';
 
-  // Row 2: blank | Verdi / Endring repeated
-  let hRow2 = `<tr><th></th>`;
-  for (let i = 0; i < growthPeriods.length; i++) {
-    hRow2 += `<th style="font-size:9px; border-left:1px solid #e2e4e8">Verdi</th><th style="font-size:9px">Endring</th>`;
-  }
-  hRow2 += `</tr>`;
-  thead.innerHTML = hRow + hRow2;
-
-  // ── BODY: one row per index ────────────────────────────────────
   let rows = '';
-  for (const d of activeDefs) {
-    const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
-    rows += `<tr>
-      <td style="font-weight:600; color:#0D2240; border-left:3px solid ${color}; padding-left:10px; white-space:nowrap">
-        ${d.label}
-      </td>`;
-
+  for (const d of defs) {
+    rows += `<tr><td style="font-weight:600; color:#0D2240; border-left:3px solid ${d._color}; padding-left:10px; white-space:nowrap">${escapeHtml(d.label)}</td>`;
     for (let i = 0; i < growthPeriods.length; i++) {
-      const p    = growthPeriods[i];
+      const p = growthPeriods[i];
       const val  = growthData[d.key]?.[p] ?? null;
       const prev = i > 0 ? (growthData[d.key]?.[growthPeriods[i-1]] ?? null) : null;
       const change = (val !== null && prev !== null) ? +(val - prev).toFixed(2) : null;
-
-      const valCell = val !== null ? val.toFixed(1) : '—';
-
-      let changeCell;
-      if (change === null) {
-        changeCell = `<span class="chip-none">–</span>`;
-      } else if (change > 0) {
-        changeCell = `<span class="chip-pos"><i class="ti ti-arrow-up" style="font-size:10px"></i>+${change.toFixed(2)}</span>`;
-      } else if (change < 0) {
-        changeCell = `<span class="chip-neg"><i class="ti ti-arrow-down" style="font-size:10px"></i>${change.toFixed(2)}</span>`;
-      } else {
-        changeCell = `<span class="chip-zero">±0.00</span>`;
-      }
-
-      rows += `<td style="font-weight:600; border-left:1px solid #e2e4e8">${valCell}</td><td>${changeCell}</td>`;
+      rows += `<td style="font-weight:600; border-left:1px solid #e2e4e8">${val !== null ? val.toFixed(1) : '—'}</td><td>${changeChip(change)}</td>`;
     }
     rows += `</tr>`;
   }
@@ -909,15 +925,14 @@ function renderGrowthTable() {
 }
 
 function copyGrowthTable() {
-  const activeDefs = INDEX_DEFS.filter(d => selectedKeys.has(d.key));
-  // Header: Indeks | Jan 2025 (verdi) | Jan 2025 (endring) | …
-  const periodHeaders = growthPeriods.flatMap(p => [periodLabel(p) + ' (verdi)', periodLabel(p) + ' (endring)']);
-  const lines = ['Indeks\t' + periodHeaders.join('\t')];
-
-  for (const d of activeDefs) {
+  const defs = activeDefs();
+  if (!defs.length || !growthPeriods.length) return;
+  const header = ['Indeks', ...growthPeriods.flatMap(p => [periodLabel(p)+' (verdi)', periodLabel(p)+' (endring)'])];
+  const lines = [header.join('\t')];
+  for (const d of defs) {
     const cols = [d.label];
     for (let i = 0; i < growthPeriods.length; i++) {
-      const p    = growthPeriods[i];
+      const p = growthPeriods[i];
       const val  = growthData[d.key]?.[p] ?? null;
       const prev = i > 0 ? (growthData[d.key]?.[growthPeriods[i-1]] ?? null) : null;
       const change = (val !== null && prev !== null) ? (val - prev).toFixed(2) : '';
@@ -928,266 +943,213 @@ function copyGrowthTable() {
   navigator.clipboard.writeText(lines.join('\n'));
 }
 
-// ── Fetch growth data ─────────────────────────────────────────
-
 async function fetchGrowth() {
-  const fromY = +document.getElementById('g-from-year').value;
-  const fromM = document.getElementById('g-from-month').value;
-  const toY   = +document.getElementById('g-to-year').value;
-  const toM   = document.getElementById('g-to-month').value;
-  const from  = `${fromY}M${fromM}`;
-  const to    = `${toY}M${toM}`;
+  if (!INDEX_DEFS.length) {
+    showAlert('growth-alert','warn','Ingen indekser er lagt til ennå. Gå til «Legg til tabell» først.');
+    return;
+  }
+  const fromY = +$('g-from-year').value, fromM = $('g-from-month').value;
+  const toY   = +$('g-to-year').value,   toM   = $('g-to-month').value;
+  const from = `${fromY}M${fromM}`, to = `${toY}M${toM}`;
 
   if (fromY > toY || (fromY === toY && fromM > toM)) {
     showAlert('growth-alert','err','«Fra»-dato må være før «til»-dato.'); return;
   }
 
   const periods = periodRange(from, to);
-  if (periods.length > 36) {
+  if (periods.length > 36)
     showAlert('growth-alert','warn',`Valgt periode er ${periods.length} måneder. Store spørringer tar lengre tid.`);
-  } else clearAlert('growth-alert');
+  else
+    clearAlert('growth-alert');
 
-  // Group by table — fetch one request per table per period
-  // Optimise: SSB v0 doesn't support multi-period in filter 'item', 
-  // but we can use 'all' or fetch each month. We fetch all periods at once using filter 'item' with all periods.
-  // Actually SSB does allow multiple Tid values in one request!
+  const groups = groupDefsByTable(INDEX_DEFS);
+  const totalReqs = groups.length;
+  let done = 0, errCount = 0;
 
-  const tableGroups = {};
-  for (const d of INDEX_DEFS) {
-    if (!tableGroups[d.tableId]) {
-      const tblDef = TABLES.find(t => t.id === d.tableId);
-      tableGroups[d.tableId] = { def: tblDef, codes: [], defs: [] };
-    }
-    tableGroups[d.tableId].codes.push(d.code);
-    tableGroups[d.tableId].defs.push(d);
-  }
-
-  const totalReqs = Object.keys(tableGroups).length;
-  let done = 0;
-  document.getElementById('fetch-progress').style.display = 'block';
-  document.getElementById('fetch-progress-bar').style.width = '0%';
-  setLoading(true, `Henter ${periods.length} måneder × 4 tabeller…`);
+  $('fetch-progress').style.display = 'block';
+  $('fetch-progress-bar').style.width = '0%';
+  setLoading(true, `Henter ${periods.length} måneder × ${totalReqs} tabell(er)…`);
   setStatus('yellow', 'Henter…');
 
   const newData = {};
-  for (const key of INDEX_DEFS.map(d => d.key)) newData[key] = {};
+  for (const d of INDEX_DEFS) newData[d.key] = {};
 
-  await Promise.all(Object.values(tableGroups).map(async ({ def, codes, defs }) => {
+  await Promise.all(groups.map(async ({ tbl, defs }) => {
     try {
-      const payload = def.payload('', codes);
-      payload.query = payload.query.map(q =>
-        q.code === 'Tid' ? { code: 'Tid', selection: { filter: 'item', values: periods } } : q
-      );
-      const labelKey = def.labelKey;
-      payload.query = payload.query.map(q =>
-        (q.code === 'Arbeidstype' || q.code === 'ArbType' || q.code === labelKey)
-          ? { code: q.code, selection: { filter: 'item', values: codes } }
-          : q
-      );
+      const codes = defs.map(d => d.code);
+      const data  = await postSSB(tbl.url, tbl.payload(periods, codes));
 
-      const data = await postSSB(def.url, payload);
-
-      const dim = data.dimension || {};
-      const codeDim = dim[labelKey] || {};
-      const timeDim = dim['Tid'] || {};
-      const codeIndex = codeDim.category?.index || {};
-      const timeIndex = timeDim.category?.index || {};
-      const values = data.value || [];
+      const codeIdx = data.dimension?.[tbl.labelKey]?.category?.index || {};
+      const timeIdx = data.dimension?.Tid?.category?.index || {};
+      const values  = data.value || [];
       const nPeriods = periods.length;
 
       for (const d of defs) {
-        const ci = codeIndex[d.code] ?? null;
-        if (ci === null) continue;
+        const ci = codeIdx[d.code];
+        if (ci == null) continue;
         for (const p of periods) {
-          const ti = timeIndex[p] ?? null;
-          if (ti === null) continue;
-          const v = values[ci * nPeriods + ti];
-          newData[d.key][p] = (v !== null && v !== undefined) ? v : null;
+          const ti = timeIdx[p];
+          if (ti == null) continue;
+          newData[d.key][p] = values[ci * nPeriods + ti] ?? null;
         }
       }
-    } catch(err) {
-      console.warn('Fetch error for', def.id, err.message);
+    } catch (err) {
+      errCount++;
+      console.warn('Feil ved henting av tabell', tbl.id, err.message);
+    } finally {
+      done++;
+      $('fetch-progress-bar').style.width = `${Math.round(done/totalReqs*100)}%`;
     }
-    done++;
-    document.getElementById('fetch-progress-bar').style.width = `${Math.round(done/totalReqs*100)}%`;
   }));
 
   setLoading(false);
-  document.getElementById('fetch-progress').style.display = 'none';
-  setStatus('green', 'SSB OK');
+  $('fetch-progress').style.display = 'none';
+
+  if (errCount && errCount === totalReqs) {
+    setStatus('red','SSB utilgjengelig');
+    showAlert('growth-alert','err','Alle kall feilet. Sjekk nettverk eller prøv igjen senere.');
+    return;
+  } else if (errCount) {
+    setStatus('yellow', `${totalReqs-errCount}/${totalReqs} OK`);
+    showAlert('growth-alert','warn',`${errCount} tabell(er) feilet — øvrige vises.`);
+  } else {
+    setStatus('green','SSB OK');
+  }
 
   growthData = newData;
   growthPeriods = periods;
-
-  document.getElementById('chart-range-label').textContent =
-    `${periodLabel(from)} – ${periodLabel(to)} (${periods.length} måneder)`;
-
-  document.getElementById('growth-results').style.display = 'block';
+  $('chart-range-label').textContent = `${periodLabel(from)} – ${periodLabel(to)} (${periods.length} måneder)`;
+  $('growth-results').style.display = 'block';
   buildPicker();
-  setChartMode('value');
+  setChartMode('value');   // tegner grafen
   renderGrowthTable();
 }
 
 // ═══════════════════════════════════════════════════════════
-//  PAGE 3: LEGG TIL TABELL
+//  SIDE 3: LEGG TIL TABELL — visuell utforsker
+//  v0-metadata: { title, variables: [{ code, text, values[], valueTexts[], time }] }
 // ═══════════════════════════════════════════════════════════
-
-let inspectedMeta  = null;   // raw metadata from SSB
-let inspectedId    = null;   // table ID string
-let customDefs     = [];     // extra INDEX_DEFS entries added by user
-
-// ── Step 1: fetch metadata ────────────────────────────────────
+let inspectedId   = null;
+let explorerMeta  = null;
+let explorerState = {};    // { [varCode]: Set(koder) }
 
 async function inspectTable() {
-  const rawId = document.getElementById('custom-tbl-id').value.trim();
+  const rawId = $('custom-tbl-id').value.trim();
   if (!rawId) { showAlert('step1-alert','warn','Skriv inn et tabellnummer.'); return; }
 
-  clearAlert('step1-alert');
-  document.getElementById('step1-alert').innerHTML =
-    `<div style="font-size:12px;color:#6b7280"><span class="mini-spinner"></span>Henter metadata for tabell ${rawId}…</div>`;
+  $('step1-alert').innerHTML =
+    `<div style="font-size:12px;color:#6b7280"><span class="mini-spinner"></span>Henter metadata for tabell ${escapeHtml(rawId)}…</div>`;
 
   try {
-    const metaResp = await fetch(`https://data.ssb.no/api/v0/no/table/${rawId}/`);
-    if (!metaResp.ok) throw new Error(`Tabell ${rawId} ikke funnet (HTTP ${metaResp.status})`);
-    const meta = await metaResp.json();
-    if (!meta.variables || !meta.variables.length) throw new Error('Ingen variabler funnet i tabellen.');
+    const resp = await fetch(`${SSB_BASE}/${encodeURIComponent(rawId)}/`);
+    if (!resp.ok) throw new Error(`Tabell ${rawId} ikke funnet (HTTP ${resp.status})`);
+    const meta = await resp.json();
+    if (!meta.variables?.length) throw new Error('Ingen variabler funnet i tabellen.');
 
-    inspectedMeta = meta;
-    inspectedId   = rawId;
+    inspectedId  = rawId;
+    explorerMeta = meta;
     clearAlert('step1-alert');
-    document.getElementById('step1-num').textContent = '✓';
-    document.getElementById('step1-num').classList.add('done');
+    $('step1-num').textContent = '✓';
+    $('step1-num').classList.add('done');
     buildExplorer(meta, rawId);
-
-  } catch(err) {
-    showAlert('step1-alert','err',`Kunne ikke hente tabell: ${err.message}`);
+  } catch (err) {
+    showAlert('step1-alert','err',`Kunne ikke hente tabell: ${escapeHtml(err.message)}`);
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  VISUAL EXPLORER
-//  Real v1 schema: { title, variables: [{ code, text, values[], valueTexts[], time }] }
-// ─────────────────────────────────────────────────────────────
-
-// Holds the current explorer state: which codes are selected per variable
-let explorerState = {};  // { [varCode]: Set of selected codes }
-let explorerMeta  = null;
-
-function buildExplorer(meta, tableId) {
-  document.getElementById('step2').classList.remove('locked');
-  document.getElementById('step2-num').classList.remove('muted');
-  document.getElementById('step2-num').textContent = '2';
-
-  document.getElementById('step2-meta').style.display = '';
-  document.getElementById('step2-meta').innerHTML =
-    `<strong>${tableId}</strong> — <span>${meta.title || tableId}</span>`;
-
-  explorerMeta  = meta;
-  explorerState = {};
-
+function splitVars(meta) {
   const variables = meta.variables || [];
   const timeVar     = variables.find(v => v.time === true);
   const contentsVar = variables.find(v => v.code === 'ContentsCode');
   const mainVars    = variables.filter(v => v !== timeVar && v !== contentsVar);
-
-  // Default: select all codes in every non-time variable; select first ContentsCode
-  for (const v of mainVars) {
-    explorerState[v.code] = new Set(v.values || []);
-  }
-  if (contentsVar?.values?.length) {
-    explorerState['ContentsCode'] = new Set([contentsVar.values[0]]);
-  }
-
-  renderExplorer(variables, timeVar, contentsVar, mainVars);
+  return { variables, timeVar, contentsVar, mainVars };
 }
 
-function renderExplorer(variables, timeVar, contentsVar, mainVars) {
-  const body = document.getElementById('explorer-body');
+function buildExplorer(meta, tableId) {
+  $('step2').classList.remove('locked');
+  $('step2-num').classList.remove('muted');
+  $('step2-num').textContent = '2';
+  $('step2-meta').style.display = '';
+  $('step2-meta').innerHTML = `<strong>${escapeHtml(tableId)}</strong> — <span>${escapeHtml(meta.title || tableId)}</span>`;
+
+  const { timeVar, contentsVar, mainVars } = splitVars(meta);
+  explorerState = {};
+  for (const v of mainVars) explorerState[v.code] = new Set(v.values || []);
+  if (contentsVar?.values?.length) explorerState['ContentsCode'] = new Set([contentsVar.values[0]]);
+
+  renderExplorer(timeVar, contentsVar, mainVars);
+}
+
+function chipMarkup(varCode, code, label, active, kind) {
+  const cls = kind === 'contents' ? 'exp-chip contents-chip' : 'exp-chip';
+  const handler = kind === 'contents'
+    ? `explorerContents('${escapeHtml(code)}', this)`
+    : `explorerToggle('${escapeHtml(varCode)}', '${escapeHtml(code)}', this)`;
+  return `<span class="${cls} ${active?'selected':''}" data-var="${escapeHtml(varCode)}" data-code="${escapeHtml(code)}"
+    onclick="${handler}" title="${escapeHtml(label)}">${escapeHtml(label)}<span class="chip-code">${escapeHtml(code)}</span></span>`;
+}
+
+function renderExplorer(timeVar, contentsVar, mainVars) {
   let html = '';
 
-  // ── Main variables ────────────────────────────────────────
   for (const v of mainVars) {
     const sel = explorerState[v.code] || new Set();
     html += `
     <div class="explorer-var">
       <div class="explorer-var-header">
-        <span class="explorer-var-name">${v.text}</span>
-        <span class="explorer-var-code">${v.code}</span>
+        <span class="explorer-var-name">${escapeHtml(v.text)}</span>
+        <span class="explorer-var-code">${escapeHtml(v.code)}</span>
         <span class="explorer-var-badge main">Klassifisering</span>
         <div class="explorer-var-actions">
-          <button onclick="explorerSelAll('${v.code}', true)">Alle</button>
-          <button onclick="explorerSelAll('${v.code}', false)">Ingen</button>
+          <button onclick="explorerSelAll('${escapeHtml(v.code)}', true)">Alle</button>
+          <button onclick="explorerSelAll('${escapeHtml(v.code)}', false)">Ingen</button>
         </div>
       </div>
       <div class="chip-grid">
-        ${(v.values || []).map((code, i) => {
-          const label = (v.valueTexts || [])[i] || code;
-          const active = sel.has(code);
-          return `<span class="exp-chip ${active ? 'selected' : ''}"
-            onclick="explorerToggle('${v.code}', '${code}', this)"
-            title="${label}">
-            ${label}
-            <span class="chip-code">${code}</span>
-          </span>`;
-        }).join('')}
+        ${(v.values || []).map((code, i) => chipMarkup(v.code, code, (v.valueTexts||[])[i] || code, sel.has(code), 'main')).join('')}
       </div>
     </div>
     <div class="explorer-divider"></div>`;
   }
 
-  // ── ContentsCode variable ─────────────────────────────────
   if (contentsVar) {
     const sel = explorerState['ContentsCode'] || new Set();
     html += `
     <div class="explorer-var">
       <div class="explorer-var-header">
-        <span class="explorer-var-name">${contentsVar.text}</span>
+        <span class="explorer-var-name">${escapeHtml(contentsVar.text)}</span>
         <span class="explorer-var-code">ContentsCode</span>
         <span class="explorer-var-badge contents">Innholdsvariabel</span>
         <span style="font-size:11px;color:#6b7280;margin-left:4px">— velg én</span>
       </div>
       <div class="chip-grid">
-        ${(contentsVar.values || []).map((code, i) => {
-          const label = (contentsVar.valueTexts || [])[i] || code;
-          const active = sel.has(code);
-          return `<span class="exp-chip contents-chip ${active ? 'selected' : ''}"
-            onclick="explorerContents('${code}', this)"
-            title="${label}">
-            ${label}
-            <span class="chip-code">${code}</span>
-          </span>`;
-        }).join('')}
+        ${(contentsVar.values || []).map((code, i) => chipMarkup('ContentsCode', code, (contentsVar.valueTexts||[])[i] || code, sel.has(code), 'contents')).join('')}
       </div>
     </div>
     <div class="explorer-divider"></div>`;
   }
 
-  // ── Time variable (info only) ─────────────────────────────
   if (timeVar) {
     const vals = timeVar.values || [];
-    const first = vals[0] || '?';
-    const last  = vals[vals.length - 1] || '?';
     html += `
     <div class="explorer-var">
       <div class="explorer-var-header">
-        <span class="explorer-var-name">${timeVar.text}</span>
-        <span class="explorer-var-code">${timeVar.code}</span>
+        <span class="explorer-var-name">${escapeHtml(timeVar.text)}</span>
+        <span class="explorer-var-code">${escapeHtml(timeVar.code)}</span>
         <span class="explorer-var-badge time">Tidsdimensjon</span>
       </div>
       <div class="time-summary">
-        Tilgjengelige perioder: <strong>${first}</strong> → <strong>${last}</strong>
+        Tilgjengelige perioder: <strong>${escapeHtml(vals[0] || '?')}</strong> → <strong>${escapeHtml(vals[vals.length-1] || '?')}</strong>
         (${vals.length} perioder totalt) — styres av tidsrom-velgeren i Vekstanalyse.
       </div>
     </div>
     <div class="explorer-divider"></div>`;
   }
 
-  // ── Add button ─────────────────────────────────────────────
   html += `<button class="explorer-add-btn" onclick="addFromExplorer()">
-    <i class="ti ti-plus" style="margin-right:6px"></i>Legg til valgte koder som indekser
-  </button>`;
+    <i class="ti ti-plus" style="margin-right:6px"></i>Legg til valgte koder som indekser</button>`;
 
-  body.innerHTML = html;
+  $('explorer-body').innerHTML = html;
 }
 
 function explorerToggle(varCode, code, el) {
@@ -1197,7 +1159,6 @@ function explorerToggle(varCode, code, el) {
 }
 
 function explorerContents(code, el) {
-  // Radio behaviour — only one ContentsCode at a time
   explorerState['ContentsCode'] = new Set([code]);
   el.closest('.chip-grid').querySelectorAll('.exp-chip').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
@@ -1207,23 +1168,15 @@ function explorerSelAll(varCode, on) {
   const v = (explorerMeta?.variables || []).find(x => x.code === varCode);
   if (!v) return;
   explorerState[varCode] = on ? new Set(v.values || []) : new Set();
-  // Re-render just that variable's chips
-  const chips = document.querySelectorAll(`.exp-chip[onclick*="explorerToggle('${varCode}'"]`);
-  chips.forEach(c => c.classList.toggle('selected', on));
+  // Robust seleksjon via data-attributter (ikke onclick-substring)
+  document.querySelectorAll(`.exp-chip[data-var="${CSS.escape(varCode)}"]`)
+    .forEach(c => c.classList.toggle('selected', on));
 }
-
-// ── Commit selections → INDEX_DEFS ────────────────────────────
 
 function addFromExplorer() {
   clearAlert('step2-alert');
-  const tableId    = inspectedId;
-  const meta       = explorerMeta;
-  const variables  = meta.variables || [];
-  const timeVar    = variables.find(v => v.time === true);
-  const contentsVar = variables.find(v => v.code === 'ContentsCode');
-  const mainVars   = variables.filter(v => v !== timeVar && v !== contentsVar);
-  const tableTitle = (meta.title || tableId).slice(0, 40);
-
+  const meta = explorerMeta, tableId = inspectedId;
+  const { contentsVar, mainVars } = splitVars(meta);
   const contCode = contentsVar
     ? [...(explorerState['ContentsCode'] || [])][0] || contentsVar.values[0]
     : null;
@@ -1232,51 +1185,12 @@ function addFromExplorer() {
   for (const v of mainVars) {
     const selCodes = [...(explorerState[v.code] || [])];
     if (!selCodes.length) continue;
-
-    const varId = v.code;
-
-    // Register table in TABLES if not already there (keyed by tableId+varId+contCode)
-    const tblKey = `${tableId}__${varId}__${contCode || ''}`;
-    if (!TABLES.find(t => t._tblKey === tblKey)) {
-      TABLES.push({
-        id: tableId,
-        _tblKey: tblKey,
-        url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
-        labelKey: varId,
-        payload: (period, codes) => ({
-          query: [
-            { code: varId, selection: { filter: 'item', values: codes } },
-            ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
-            { code: 'Tid', selection: { filter: 'item', values: Array.isArray(period) ? period : [period] } }
-          ],
-          response: { format: 'json-stat2' }
-        })
-      });
-    }
-
     for (const code of selCodes) {
-      const key = `custom-${tableId}-${varId}-${code}`;
-      if (INDEX_DEFS.find(d => d.key === key)) continue;
-
-      const label = (v.valueTexts || [])[(v.values || []).indexOf(code)] || code;
-      const contLabel = contCode
-        ? (contentsVar?.valueTexts || [])[contentsVar.values.indexOf(contCode)] || contCode
-        : '';
-
-      const def = {
-        key, tableId, code,
-        label: `${label} (${tableId})`,
-        shortLabel: label.slice(0, 20),
-        group: `${tableId} – ${tableTitle}`,
-        _varId: varId,
-        _contCode: contCode,
-        _custom: true,
-      };
-
-      INDEX_DEFS.push(def);
-      selectedKeys.add(key);
-      customDefs.push(def);
-      added++;
+      const baseLabel = (v.valueTexts || [])[(v.values || []).indexOf(code)] || code;
+      if (makeDef({ tableId, varId: v.code, contCode, code, baseLabel })) {
+        selectedKeys.add(`custom-${tableId}-${v.code}-${code}`);
+        added++;
+      }
     }
   }
 
@@ -1284,63 +1198,48 @@ function addFromExplorer() {
 
   showAlert('step2-alert','info',`✓ ${added} indeks(er) lagt til — se steg 3.`);
   renderAddedList();
-
-  document.getElementById('step3').classList.remove('locked');
-  document.getElementById('step3-num').classList.remove('muted');
-  document.getElementById('step3-num').classList.add('done');
-  document.getElementById('step3-num').textContent = '✓';
+  $('step3').classList.remove('locked');
+  $('step3-num').classList.remove('muted');
+  $('step3-num').classList.add('done');
+  $('step3-num').textContent = '✓';
 }
 
 function removeCustomDef(key) {
-  const idx = INDEX_DEFS.findIndex(d => d.key === key);
-  if (idx !== -1) INDEX_DEFS.splice(idx, 1);
-  const cidx = customDefs.findIndex(d => d.key === key);
-  if (cidx !== -1) customDefs.splice(cidx, 1);
-  selectedKeys.delete(key);
+  removeDef(key);
   renderAddedList();
 }
+function removeAnyDef(key) { removeCustomDef(key); }
 
 function renderAddedList() {
-  const list = document.getElementById('added-list');
-  if (!customDefs.length) {
-    list.innerHTML = `<div class="empty" style="padding:16px">Ingen lagt til ennå.</div>`;
-  } else {
-    list.innerHTML = customDefs.map((d) => {
-      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
-      return `<div class="added-item">
-        <span class="ai-swatch" style="background:${color}"></span>
-        <span class="ai-label">${d.label}</span>
-        <span class="ai-tag">${d.tableId} · ${d.code}</span>
+  const list = $('added-list');
+  list.innerHTML = customDefs.length
+    ? customDefs.map(d => `<div class="added-item">
+        <span class="ai-swatch" style="background:${d._color}"></span>
+        <span class="ai-label">${escapeHtml(d.label)}</span>
+        <span class="ai-tag">${escapeHtml(d.tableId)} · ${escapeHtml(d.code)}</span>
         <button class="ai-remove" onclick="removeCustomDef('${d.key}')" title="Fjern">✕</button>
-      </div>`;
-    }).join('');
-  }
+      </div>`).join('')
+    : `<div class="empty" style="padding:16px">Ingen lagt til ennå.</div>`;
   renderManageList();
 }
 
 function renderManageList() {
-  const container = document.getElementById('manage-list');
+  const container = $('manage-list');
   if (!container) return;
-
-  // Group all INDEX_DEFS by their group label
   const groups = {};
-  for (const d of INDEX_DEFS) {
-    if (!groups[d.group]) groups[d.group] = [];
-    groups[d.group].push(d);
-  }
+  for (const d of INDEX_DEFS) (groups[d.group] ||= []).push(d);
 
   let html = '';
   for (const [grp, defs] of Object.entries(groups)) {
-    html += `<div class="manage-group-label">${grp}</div>`;
+    html += `<div class="manage-group-label">${escapeHtml(grp)}</div>`;
     for (const d of defs) {
-      const color   = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
-      const active  = selectedKeys.has(d.key);
-      html += `<div class="manage-item ${active ? '' : 'disabled'}" id="mi-${d.key}">
-        <span class="mi-swatch" style="background:${color}"></span>
-        <span class="mi-label">${d.label}</span>
-        <span class="mi-tag">${d.tableId} · ${d.code}</span>
-        <label class="manage-toggle" title="${active ? 'Deaktiver' : 'Aktiver'}">
-          <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleManage('${d.key}', this.checked)">
+      const active = selectedKeys.has(d.key);
+      html += `<div class="manage-item ${active?'':'disabled'}" id="mi-${d.key}">
+        <span class="mi-swatch" style="background:${d._color}"></span>
+        <span class="mi-label">${escapeHtml(d.label)}</span>
+        <span class="mi-tag">${escapeHtml(d.tableId)} · ${escapeHtml(d.code)}</span>
+        <label class="manage-toggle" title="${active?'Deaktiver':'Aktiver'}">
+          <input type="checkbox" ${active?'checked':''} onchange="toggleManage('${d.key}', this.checked)">
           <span class="manage-toggle-track"></span>
         </label>
         <button class="mi-remove" onclick="removeAnyDef('${d.key}')" title="Fjern permanent">✕</button>
@@ -1350,43 +1249,30 @@ function renderManageList() {
   container.innerHTML = html || `<div class="empty" style="padding:16px">Ingen indekser.</div>`;
 }
 
-function toggleManage(key, on) {
-  if (on) selectedKeys.add(key); else selectedKeys.delete(key);
-  const row = document.getElementById('mi-' + key);
-  if (row) row.classList.toggle('disabled', !on);
+function syncGrowthViews() {
+  // Hold Vekstanalyse i sync hvis data allerede er hentet
+  if (!growthPeriods.length) return;
+  buildPicker();
+  renderGrowthChart();
+  renderGrowthTable();
 }
 
-function removeAnyDef(key) {
-  // Only allow removal of custom defs (built-ins have button disabled)
-  removeCustomDef(key);
+function toggleManage(key, on) {
+  if (on) selectedKeys.add(key); else selectedKeys.delete(key);
+  $('mi-' + key)?.classList.toggle('disabled', !on);
+  syncGrowthViews();
 }
 
 function manageAll(on) {
-  for (const d of INDEX_DEFS) {
-    if (on) selectedKeys.add(d.key); else selectedKeys.delete(d.key);
-  }
+  for (const d of INDEX_DEFS) { if (on) selectedKeys.add(d.key); else selectedKeys.delete(d.key); }
   renderManageList();
+  syncGrowthViews();
 }
 
-
 // ═══════════════════════════════════════════════════════════
-//  CONFIG.JSON  — load on startup, export on demand
+//  CONFIG.JSON
+//  { "indexes": [ { tableId, varId, contCode?, codes:[{code,label}] } ] }
 // ═══════════════════════════════════════════════════════════
-
-// Schema for config.json:
-// {
-//   "indexes": [
-//     {
-//       "tableId": "07221",
-//       "varId":   "Næring",
-//       "contCode": "KPI",        // optional ContentsCode value
-//       "codes": [
-//         { "code": "00", "label": "Alle næringer" }
-//       ]
-//     }
-//   ]
-// }
-
 async function loadConfig() {
   try {
     const resp = await fetch('./config.json?_=' + Date.now());
@@ -1396,79 +1282,37 @@ async function loadConfig() {
     if (!entries.length) return;
 
     let loaded = 0;
-    for (const entry of entries) {
-      const { tableId, varId, contCode, codes } = entry;
+    for (const { tableId, varId, contCode, codes } of entries) {
       if (!tableId || !varId || !Array.isArray(codes)) continue;
-
-      // Use a consistent tblKey so multiple varId/contCode combos per tableId are handled
-      const tblKey = `${tableId}__${varId}__${contCode || ''}`;
-
-      if (!TABLES.find(t => t._tblKey === tblKey)) {
-        // Capture varId and contCode in closure correctly
-        const _varId = varId;
-        const _contCode = contCode || null;
-        TABLES.push({
-          id: tableId,
-          _tblKey: tblKey,
-          url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
-          labelKey: _varId,
-          payload: (period, cds) => ({
-            query: [
-              { code: _varId, selection: { filter: 'item', values: cds } },
-              ...(_contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [_contCode] } }] : []),
-              { code: 'Tid', selection: { filter: 'item', values: Array.isArray(period) ? period : [period] } }
-            ],
-            response: { format: 'json-stat2' }
-          })
-        });
-      }
-
-      // Group label = "Tabell XXXXX" — clean and consistent
-      const groupLabel = `Tabell ${tableId}`;
-
       for (const { code, label } of codes) {
-        const key = `custom-${tableId}-${varId}-${code}`;
-        if (INDEX_DEFS.find(d => d.key === key)) continue;
-        const def = {
-          key, tableId, code,
-          label: `${label} (${tableId})`,   // display: "Elektrikararbeid, i alt (08655)"
-          shortLabel: label.slice(0, 22),
-          group: groupLabel,
-          _varId: varId,
-          _contCode: contCode || null,
-          _tblKey: tblKey,
-          _custom: true,
-          _fromConfig: true,
-        };
-        INDEX_DEFS.push(def);
-        selectedKeys.add(key);
-        customDefs.push(def);
-        loaded++;
+        if (makeDef({ tableId, varId, contCode: contCode || null, code, baseLabel: label ?? code })) {
+          selectedKeys.add(`custom-${tableId}-${varId}-${code}`);
+          loaded++;
+        }
       }
     }
 
     if (loaded > 0) {
-      document.getElementById('step3').classList.remove('locked');
-      document.getElementById('step3-num').classList.remove('muted');
-      document.getElementById('step3-num').classList.add('done');
-      document.getElementById('step3-num').textContent = '✓';
-      const banner = document.getElementById('config-loaded-banner');
+      $('step3').classList.remove('locked');
+      $('step3-num').classList.remove('muted');
+      $('step3-num').classList.add('done');
+      $('step3-num').textContent = '✓';
+      const banner = $('config-loaded-banner');
       banner.style.display = '';
       banner.textContent = `✓ ${loaded} indeks(er) lastet fra config.json`;
       renderAddedList();
     }
-  } catch(e) {
-    console.info('config.json not found or invalid, skipping.');
+  } catch (e) {
+    console.info('config.json ikke funnet eller ugyldig — hopper over.');
   }
 }
 
 function buildConfigJson() {
-  // Group customDefs by tableId+varId+contCode
   const groups = {};
   for (const d of customDefs) {
     const gk = `${d.tableId}||${d._varId}||${d._contCode || ''}`;
     if (!groups[gk]) groups[gk] = { tableId: d.tableId, varId: d._varId, contCode: d._contCode || null, codes: [] };
-    groups[gk].codes.push({ code: d.code, label: d.label.replace(/ \(\d+\)$/, '') });
+    groups[gk].codes.push({ code: d.code, label: d.baseLabel });
   }
   const indexes = Object.values(groups).map(g => {
     const obj = { tableId: g.tableId, varId: g.varId };
@@ -1479,13 +1323,15 @@ function buildConfigJson() {
   return JSON.stringify({ indexes }, null, 2);
 }
 
-function exportConfig() {
-  const json = buildConfigJson();
-  // Show preview
-  const preview = document.getElementById('config-json-preview');
+function showConfigPreview(json) {
+  const preview = $('config-json-preview');
   preview.style.display = 'block';
   preview.textContent = json;
-  // Trigger download
+}
+
+function exportConfig() {
+  const json = buildConfigJson();
+  showConfigPreview(json);
   const blob = new Blob([json], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1496,11 +1342,9 @@ function exportConfig() {
 
 function copyConfigJson() {
   const json = buildConfigJson();
-  const preview = document.getElementById('config-json-preview');
-  preview.style.display = 'block';
-  preview.textContent = json;
+  showConfigPreview(json);
   navigator.clipboard.writeText(json).then(() => {
-    const btn = document.getElementById('copy-config-btn');
+    const btn = $('copy-config-btn');
     btn.innerHTML = '<i class="ti ti-check" style="margin-right:5px"></i>Kopiert!';
     setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy" style="margin-right:5px"></i>Kopier JSON'; }, 2000);
   });
@@ -1511,26 +1355,22 @@ function copyConfigJson() {
 // ═══════════════════════════════════════════════════════════
 (async function init() {
   const now = new Date();
-  let m = now.getMonth();
+  let m = now.getMonth();          // 0-basert ⇒ forrige måned
   let y = now.getFullYear();
   if (m === 0) { m = 12; y--; }
   const ms = String(m).padStart(2,'0');
-  document.getElementById('ctrl-month').value = ms;
-  document.getElementById('ctrl-year').value = y;
+  $('ctrl-month').value = ms;
+  $('ctrl-year').value  = y;
 
   let fy = y, fm = m - 12;
   if (fm <= 0) { fm += 12; fy--; }
-  document.getElementById('g-from-month').value = String(fm).padStart(2,'0');
-  document.getElementById('g-from-year').value = fy;
-  document.getElementById('g-to-month').value = ms;
-  document.getElementById('g-to-year').value = y;
+  $('g-from-month').value = String(fm).padStart(2,'0');
+  $('g-from-year').value  = fy;
+  $('g-to-month').value   = ms;
+  $('g-to-year').value    = y;
 
   setChartMode('value');
-
-  // Populate manage list immediately with built-in indexes
   renderManageList();
-
-  // Load custom indexes from config.json (silently skipped if missing)
   await loadConfig();
 })();
 </script>
