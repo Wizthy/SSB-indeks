@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSB Indeksverdier – Bravida</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F5F6F7; color: #1A2E44; font-size: 14px; }
+
+    /* TOP BAR */
+    .topbar { background: #0D2240; padding: 8px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 50; }
+    .topbar span { color: #fff; font-size: 12px; opacity: .7; }
+    .topbar strong { color: #fff; font-size: 13px; }
+    .topbar .db-status { margin-left: auto; font-size: 11px; display: flex; align-items: center; gap: 5px; color: #fff; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot.green  { background: #4ade80; }
+    .dot.red    { background: #f87171; }
+    .dot.yellow { background: #fbbf24; }
+
+    /* NAVBAR */
+    .navbar { background: #fff; border-bottom: 1px solid #e2e4e8; padding: 0 24px; display: flex; align-items: center; position: sticky; top: 36px; z-index: 49; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .nav-logo { display: flex; align-items: center; gap: 8px; margin-right: 32px; padding: 12px 0; }
+    .nav-btn { border: none; background: none; padding: 14px; font-size: 13px; color: #0D2240; cursor: pointer; border-bottom: 3px solid transparent; font-family: inherit; font-weight: 500; }
+    .nav-btn.active { border-bottom-color: #009EB2; color: #009EB2; }
+    .nav-btn:hover  { color: #009EB2; }
+
+    /* PAGES */
+    .page { display: none; padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    h2 { font-size: 20px; font-weight: 600; color: #0D2240; margin-bottom: 4px; }
+    .subtitle { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+
+    /* CONTROLS */
+    .controls { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; }
+    .controls label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+    .controls select, .controls input {
+      padding: 8px 11px; border: 1px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; font-family: inherit; background: #fff; color: #1A2E44; transition: border .15s; width: auto;
+    }
+    .controls select:focus, .controls input:focus { outline: none; border-color: #009EB2; box-shadow: 0 0 0 3px rgba(0,158,178,.1); }
+    .btn { padding: 8px 18px; border-radius: 5px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; transition: background .15s, transform .1s; }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: #009EB2; color: #fff; }
+    .btn-primary:hover { background: #0D2240; }
+    .btn-ghost { background: none; border: 1px solid #d1d5db; color: #1A2E44; }
+    .btn-ghost:hover { background: #f9fafb; }
+
+    /* METRIC GRID */
+    .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .metric { background: #fff; border-radius: 8px; padding: 14px 16px; border: 1px solid #e2e4e8; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .metric-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+    .metric-value { font-size: 22px; font-weight: 600; color: #0D2240; }
+
+    /* CARDS */
+    .card { background: #fff; border: 1px solid #e2e4e8; border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-title { font-size: 14px; font-weight: 600; color: #0D2240; }
+    .card-sub   { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .tag-teal { background: #ccf2f7; color: #006474; }
+
+    /* TABLES */
+    .tbl-wrap { overflow-x: auto; border: 1px solid #e2e4e8; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 9px 12px; font-size: 10px; font-weight: 600; color: #6b7280; border-bottom: 2px solid #009EB2; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; background: #f9fafb; }
+    td { padding: 9px 12px; border-bottom: 1px solid #f3f4f6; color: #1A2E44; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f9fafb; }
+    td.val { font-weight: 600; font-size: 15px; color: #0D2240; }
+    td.tbl-id { font-size: 11px; color: #9ca3af; font-family: monospace; }
+    td.status-ok  { color: #059669; }
+    td.status-err { color: #dc2626; }
+    td.change-pos { color: #059669; font-weight: 600; }
+    td.change-neg { color: #dc2626; font-weight: 600; }
+    td.change-zero { color: #6b7280; }
+
+    /* ALERT */
+    .alert { padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 12px; }
+    .alert-err  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-warn { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .alert-info { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+    /* LOADING */
+    .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(255,255,255,.85); z-index: 500; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+    .loading-overlay.show { display: flex; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e2e4e8; border-top-color: #009EB2; border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay span { font-size: 13px; color: #6b7280; }
+
+    /* MISC */
+    .fetch-meta { font-size: 11px; color: #9ca3af; margin-bottom: 18px; display: flex; align-items: center; gap: 6px; }
+    .period-badge { display: inline-flex; align-items: center; gap: 6px; background: #0D2240; color: #fff; border-radius: 6px; padding: 5px 12px; font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+    .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: #6b7280; margin: 20px 0 10px; display: flex; align-items: center; gap: 8px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: #e2e4e8; }
+    .empty { text-align: center; padding: 30px; color: #9ca3af; font-size: 13px; }
+
+    /* ── GROWTH SECTION ── */
+    .growth-layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 780px) { .growth-layout { grid-template-columns: 1fr; } }
+
+    /* Index picker */
+    .picker-card { background: #fff; border: 1px solid #e2e4e8; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .picker-title { font-size: 12px; font-weight: 600; color: #0D2240; margin-bottom: 12px; text-transform: uppercase; letter-spacing: .6px; }
+    .picker-group-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: #9ca3af; padding: 8px 0 4px; border-top: 1px solid #f3f4f6; margin-top: 4px; }
+    .picker-group-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+    .picker-item { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 5px; cursor: pointer; font-size: 12px; color: #374151; transition: background .1s; user-select: none; }
+    .picker-item:hover { background: #f3f4f6; }
+    .picker-item input[type=checkbox] { width: 14px; height: 14px; margin: 0; flex-shrink: 0; accent-color: #009EB2; cursor: pointer; }
+    .picker-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .picker-actions { display: flex; gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3f4f6; }
+    .picker-actions button { flex: 1; padding: 5px 0; font-size: 11px; font-family: inherit; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db; background: none; color: #374151; }
+    .picker-actions button:hover { background: #f9fafb; }
+
+    /* Range picker */
+    .range-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .range-row label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 500; }
+    .range-row select, .range-row input { padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff; color: #1A2E44; }
+    .range-row select:focus, .range-row input:focus { outline: none; border-color: #009EB2; box-shadow: 0 0 0 3px rgba(0,158,178,.1); }
+
+    /* Chart card */
+    .chart-card { background: #fff; border: 1px solid #e2e4e8; border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .chart-wrap { position: relative; height: 280px; }
+
+    /* Growth table */
+    .growth-tbl th { border-bottom: 2px solid #009EB2; }
+    .growth-tbl td { vertical-align: middle; }
+    .chip-pos { display: inline-flex; align-items: center; gap: 3px; background: #d1fae5; color: #065f46; border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; }
+    .chip-neg { display: inline-flex; align-items: center; gap: 3px; background: #fef2f2; color: #991b1b; border-radius: 4px; padding: 2px 7px; font-size: 12px; font-weight: 600; }
+    .chip-zero { display: inline-flex; align-items: center; gap: 3px; background: #f3f4f6; color: #6b7280; border-radius: 4px; padding: 2px 7px; font-size: 12px; }
+    .chip-none { display: inline-flex; align-items: center; background: #f3f4f6; color: #9ca3af; border-radius: 4px; padding: 2px 7px; font-size: 12px; }
+
+    /* Loading mini */
+    .mini-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e2e4e8; border-top-color: #009EB2; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+
+    /* Progress bar for fetch */
+    .fetch-progress { height: 3px; background: #e2e4e8; border-radius: 2px; margin-bottom: 14px; overflow: hidden; display: none; }
+    .fetch-progress-bar { height: 100%; background: #009EB2; border-radius: 2px; transition: width .3s; }
+
+    /* ── ADD TABLE PAGE ── */
+    .step-flow { display: flex; flex-direction: column; gap: 16px; max-width: 680px; }
+    .step { background: #fff; border: 1px solid #e2e4e8; border-radius: 10px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .step-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .step-num { width: 24px; height: 24px; border-radius: 50%; background: #009EB2; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-num.done { background: #10b981; }
+    .step-num.muted { background: #d1d5db; }
+    .step-title { font-size: 14px; font-weight: 600; color: #0D2240; }
+    .step-sub { font-size: 12px; color: #6b7280; margin-top: 1px; }
+    .step.locked { opacity: .45; pointer-events: none; }
+
+    .tbl-input-row { display: flex; gap: 8px; }
+    .tbl-input-row input { flex: 1; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; font-family: inherit; color: #1A2E44; letter-spacing: 1px; font-weight: 600; }
+    .tbl-input-row input:focus { outline: none; border-color: #009EB2; box-shadow: 0 0 0 3px rgba(0,158,178,.1); }
+    .tbl-input-row input::placeholder { font-weight: 400; letter-spacing: 0; color: #9ca3af; }
+
+    .meta-box { background: #f9fafb; border: 1px solid #e2e4e8; border-radius: 7px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; }
+    .meta-box strong { color: #0D2240; }
+    .meta-box span { color: #6b7280; }
+
+    .var-pick-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: #6b7280; margin-bottom: 6px; }
+    .var-select { width: 100%; padding: 8px 11px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit; background: #fff; color: #1A2E44; margin-bottom: 14px; }
+    .var-select:focus { outline: none; border-color: #009EB2; box-shadow: 0 0 0 3px rgba(0,158,178,.1); }
+
+    .code-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; max-height: 240px; overflow-y: auto; margin-bottom: 14px; padding: 2px; }
+    .code-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid #e2e4e8; border-radius: 6px; cursor: pointer; font-size: 12px; color: #374151; transition: border-color .1s, background .1s; user-select: none; }
+    .code-item:hover { border-color: #009EB2; background: #f0fdfe; }
+    .code-item.selected { border-color: #009EB2; background: #e0f7fa; color: #006474; }
+    .code-item input[type=checkbox] { width: 13px; height: 13px; margin: 0; flex-shrink: 0; accent-color: #009EB2; }
+    .code-item .code-id { font-family: monospace; font-size: 10px; color: #9ca3af; margin-left: auto; flex-shrink: 0; }
+    .code-item.selected .code-id { color: #009EB2; }
+
+    .code-actions { display: flex; gap: 6px; margin-bottom: 12px; }
+    .code-actions button { padding: 4px 10px; font-size: 11px; font-family: inherit; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db; background: none; color: #374151; }
+    .code-actions button:hover { background: #f9fafb; }
+
+    .added-list { display: flex; flex-direction: column; gap: 6px; }
+    .added-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid #e2e4e8; border-radius: 7px; background: #f9fafb; font-size: 12px; }
+    .added-item .ai-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .added-item .ai-label { flex: 1; color: #0D2240; font-weight: 500; }
+    .added-item .ai-tag { font-size: 10px; color: #6b7280; font-family: monospace; background: #e5e7eb; border-radius: 4px; padding: 1px 5px; }
+    .added-item .ai-remove { margin-left: auto; background: none; border: none; cursor: pointer; color: #9ca3af; font-size: 15px; padding: 0 2px; border-radius: 3px; }
+    .added-item .ai-remove:hover { color: #dc2626; background: #fef2f2; }
+
+    /* Manage list */
+    .manage-group-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: #9ca3af; padding: 10px 0 4px; border-top: 1px solid #f3f4f6; margin-top: 4px; }
+    .manage-group-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+    .manage-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; font-size: 12px; border: 1px solid #e2e4e8; margin-bottom: 4px; background: #fff; transition: background .1s; }
+    .manage-item.disabled { opacity: .5; }
+    .manage-item .mi-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .manage-item .mi-label { flex: 1; color: #0D2240; font-weight: 500; }
+    .manage-item .mi-tag { font-size: 10px; color: #6b7280; font-family: monospace; background: #f3f4f6; border-radius: 4px; padding: 1px 5px; flex-shrink: 0; }
+    .manage-item .mi-built { font-size: 10px; color: #9ca3af; flex-shrink: 0; }
+    .manage-toggle { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+    .manage-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .manage-toggle-track { position: absolute; inset: 0; border-radius: 9px; background: #d1d5db; cursor: pointer; transition: background .2s; }
+    .manage-toggle input:checked + .manage-toggle-track { background: #009EB2; }
+    .manage-toggle-track::after { content: ''; position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: left .2s; }
+    .manage-toggle input:checked + .manage-toggle-track::after { left: 17px; }
+    .mi-remove { background: none; border: none; cursor: pointer; color: #d1d5db; font-size: 15px; padding: 1px 3px; border-radius: 3px; flex-shrink: 0; transition: color .1s, background .1s; }
+    .mi-remove:hover { color: #dc2626; background: #fef2f2; }
+    .mi-remove:disabled { opacity: 0; cursor: default; pointer-events: none; }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
+    <polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".3"/>
+    <polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/>
+  </svg>
+  <strong>Bravida</strong>
+  <span>SSB Indeksverktøy</span>
+  <div class="db-status" id="api-status">
+    <div class="dot yellow" id="status-dot"></div>
+    <span id="status-text">Ikke hentet</span>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<div class="navbar">
+  <div class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+      <polygon points="14,2 26,9 26,19 14,26 2,19 2,9" fill="#009EB2" opacity=".15"/>
+      <polygon points="14,6 22,11 22,17 14,22 6,17 6,11" fill="#009EB2"/>
+    </svg>
+    <span style="font-size:16px;font-weight:700;color:#0D2240;letter-spacing:-.5px">Bravida</span>
+  </div>
+  <button class="nav-btn active" onclick="showPage('oversikt', this)">Oversikt</button>
+  <button class="nav-btn" onclick="showPage('vekst', this)">Vekstanalyse</button>
+  <button class="nav-btn" onclick="showPage('legg-til', this)">Legg til tabell</button>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 1: OVERSIKT (single period)
+════════════════════════════════════════ -->
+<div class="page active" id="page-oversikt">
+  <h2>SSB Indeksverdier</h2>
+  <p class="subtitle">Byggekostnadsindekser hentet direkte fra SSBs statistikkbank – velg periode og hent.</p>
+
+  <div class="controls">
+    <div>
+      <label>År</label>
+      <input type="number" id="ctrl-year" min="2010" max="2030" value="2026" style="width:90px">
+    </div>
+    <div>
+      <label>Måned</label>
+      <select id="ctrl-month" style="width:130px">
+        <option value="01">Januar</option><option value="02">Februar</option><option value="03">Mars</option>
+        <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
+        <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
+        <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+      </select>
+    </div>
+    <div style="padding-bottom:1px">
+      <button class="btn btn-primary" onclick="fetchAll()">
+        <i class="ti ti-refresh" style="margin-right:5px"></i>Hent indekser
+      </button>
+    </div>
+    <div style="padding-bottom:1px; display:flex; gap:6px;">
+      <button class="btn btn-ghost" onclick="loadMock()" style="border-color:#fbbf24;color:#92400e">
+        <i class="ti ti-test-pipe" style="margin-right:5px"></i>Testdata
+      </button>
+      <button class="btn btn-ghost" onclick="copyTable()" id="copy-btn" style="display:none">
+        <i class="ti ti-copy" style="margin-right:5px"></i>Kopier
+      </button>
+    </div>
+  </div>
+
+  <div id="alert-area"></div>
+
+  <div id="results-area" style="display:none">
+    <div class="period-badge"><i class="ti ti-calendar"></i><span id="period-label">–</span></div>
+    <div class="fetch-meta"><i class="ti ti-clock"></i><span id="fetch-time">–</span></div>
+    <div class="metric-grid" id="metric-grid"></div>
+
+    <div class="section-label">Tabell 08655 — Elektro, VVS, Bygg</div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Byggekostnadsindeks — Boliger</div><div class="card-sub">Elektro (20) · VVS (28) · Tømrer (30)</div></div>
+        <span class="tag tag-teal">08655</span>
+      </div>
+      <div class="tbl-wrap"><table id="tbl-08655"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="section-label">Tabell 08651 — Enebolig og blokk</div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Byggekostnadsindeks — Enebolig og blokk</div><div class="card-sub">Enebolig (01) · Blokkleilighet (02)</div></div>
+        <span class="tag tag-teal">08651</span>
+      </div>
+      <div class="tbl-wrap"><table id="tbl-08651"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="section-label">Tabell 04534 — Totalindeks</div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Byggekostnadsindeks — Totalindeks</div><div class="card-sub">Alle byggetyper (1)</div></div>
+        <span class="tag tag-teal">04534</span>
+      </div>
+      <div class="tbl-wrap"><table id="tbl-04534"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="section-label">Tabell 08653 — Anlegg</div>
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Byggekostnadsindeks — Anlegg</div><div class="card-sub">Anleggsvirksomhet (18)</div></div>
+        <span class="tag tag-teal">08653</span>
+      </div>
+      <div class="tbl-wrap"><table id="tbl-08653"><thead><tr><th>Arbeidstype</th><th>Kode</th><th>Indeksverdi</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 2: VEKSTANALYSE
+════════════════════════════════════════ -->
+<div class="page" id="page-vekst">
+  <h2>Vekstanalyse</h2>
+  <p class="subtitle">Velg indekser og tidsrom for å se utvikling og månedlig endring.</p>
+
+  <!-- Range + fetch -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title" style="margin-bottom:14px">Tidsrom og datakilde</div>
+    <div class="range-row">
+      <div>
+        <label>Fra år</label>
+        <input type="number" id="g-from-year" min="2010" max="2030" value="2025" style="width:86px">
+      </div>
+      <div>
+        <label>Fra måned</label>
+        <select id="g-from-month" style="width:130px">
+          <option value="01">Januar</option><option value="02">Februar</option><option value="03">Mars</option>
+          <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
+          <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:1px;color:#9ca3af;font-size:18px">→</div>
+      <div>
+        <label>Til år</label>
+        <input type="number" id="g-to-year" min="2010" max="2030" value="2026" style="width:86px">
+      </div>
+      <div>
+        <label>Til måned</label>
+        <select id="g-to-month" style="width:130px">
+          <option value="01">Januar</option><option value="02">Februar</option><option value="03">Mars</option>
+          <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
+          <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
+          <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+        </select>
+      </div>
+      <div style="padding-bottom:1px; display:flex; gap:6px;">
+        <button class="btn btn-primary" onclick="fetchGrowth()">
+          <i class="ti ti-chart-line" style="margin-right:5px"></i>Hent og analyser
+        </button>
+        <button class="btn btn-ghost" onclick="loadMockGrowth()" style="border-color:#fbbf24;color:#92400e">
+          <i class="ti ti-test-pipe" style="margin-right:5px"></i>Testdata
+        </button>
+      </div>
+    </div>
+    <div class="fetch-progress" id="fetch-progress"><div class="fetch-progress-bar" id="fetch-progress-bar" style="width:0%"></div></div>
+    <div id="growth-alert"></div>
+  </div>
+
+  <div id="growth-results" style="display:none">
+    <div class="growth-layout">
+
+      <!-- LEFT: index picker -->
+      <div class="picker-card">
+        <div class="picker-title">Velg indekser</div>
+        <div id="picker-list"></div>
+        <div class="picker-actions">
+          <button onclick="pickerAll(true)">Velg alle</button>
+          <button onclick="pickerAll(false)">Fjern alle</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: chart + table -->
+      <div>
+        <div class="chart-card">
+          <div class="card-head" style="margin-bottom:12px">
+            <div>
+              <div class="card-title">Indeksutvikling over tid</div>
+              <div class="card-sub" id="chart-range-label">–</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="setChartMode('value')" id="btn-mode-value">Verdi</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="setChartMode('change')" id="btn-mode-change">Endring</button>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="growth-chart"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="margin-bottom:12px">
+            <div class="card-title">Månedlig utvikling</div>
+            <button class="btn btn-ghost" onclick="copyGrowthTable()" style="font-size:11px;padding:5px 10px">
+              <i class="ti ti-copy" style="margin-right:4px"></i>Kopier
+            </button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="growth-tbl" id="growth-table">
+              <thead id="growth-thead"></thead>
+              <tbody id="growth-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /growth-layout -->
+  </div><!-- /growth-results -->
+</div>
+
+<!-- ═══════════════════════════════════════
+     PAGE 3: LEGG TIL TABELL
+════════════════════════════════════════ -->
+<div class="page" id="page-legg-til">
+  <h2>Legg til SSB-tabell</h2>
+  <p class="subtitle">Skriv inn et SSB-tabellnummer, velg variabel og koder — og legg dem til som indekser i Oversikt og Vekstanalyse.</p>
+
+  <div class="step-flow">
+
+    <!-- STEP 1: enter table ID -->
+    <div class="step" id="step1">
+      <div class="step-header">
+        <div class="step-num" id="step1-num">1</div>
+        <div><div class="step-title">Tabellnummer</div><div class="step-sub">Finn tabellnummeret på ssb.no/statbank</div></div>
+      </div>
+      <div class="tbl-input-row">
+        <input type="text" id="custom-tbl-id" placeholder="f.eks. 08655" maxlength="10"
+          onkeydown="if(event.key==='Enter') inspectTable()">
+        <button class="btn btn-primary" onclick="inspectTable()">
+          <i class="ti ti-search" style="margin-right:5px"></i>Sjekk tabell
+        </button>
+      </div>
+      <div id="step1-alert" style="margin-top:10px"></div>
+    </div>
+
+    <!-- STEP 2: pick variable + codes -->
+    <div class="step locked" id="step2">
+      <div class="step-header">
+        <div class="step-num muted" id="step2-num">2</div>
+        <div><div class="step-title">Velg variabel og koder</div><div class="step-sub">Velg hvilken dimensjon og hvilke koder du vil følge</div></div>
+      </div>
+
+      <div id="step2-meta" class="meta-box" style="display:none"></div>
+
+      <div class="var-pick-label">Variabel (dimensjon)</div>
+      <select class="var-select" id="var-select" onchange="onVarChange()"></select>
+
+      <div class="var-pick-label">Innholdsvariabel (ContentsCode)</div>
+      <select class="var-select" id="contents-select"></select>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+        <div class="var-pick-label" style="margin-bottom:0">Koder å legge til</div>
+        <div class="code-actions">
+          <button onclick="codesAll(true)">Velg alle</button>
+          <button onclick="codesAll(false)">Fjern alle</button>
+        </div>
+      </div>
+      <div class="code-grid" id="code-grid"></div>
+
+      <button class="btn btn-primary" onclick="addCodes()" style="width:100%">
+        <i class="ti ti-plus" style="margin-right:5px"></i>Legg til valgte koder som indekser
+      </button>
+      <div id="step2-alert" style="margin-top:10px"></div>
+    </div>
+
+    <!-- STEP 3: added list -->
+    <div class="step locked" id="step3">
+      <div class="step-header">
+        <div class="step-num muted" id="step3-num">3</div>
+        <div><div class="step-title">Egendefinerte indekser</div><div class="step-sub">Disse er nå tilgjengelige i Oversikt og Vekstanalyse</div></div>
+      </div>
+      <div id="config-loaded-banner" style="display:none" class="alert alert-info" style="margin-bottom:12px"></div>
+      <div class="added-list" id="added-list">
+        <div class="empty" style="padding:16px">Ingen lagt til ennå.</div>
+      </div>
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid #f3f4f6; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="exportConfig()">
+          <i class="ti ti-download" style="margin-right:5px"></i>Eksporter config.json
+        </button>
+        <button class="btn btn-ghost" onclick="copyConfigJson()" id="copy-config-btn">
+          <i class="ti ti-copy" style="margin-right:5px"></i>Kopier JSON
+        </button>
+      </div>
+      <div id="config-json-preview" style="display:none; margin-top:12px; background:#f9fafb; border:1px solid #e2e4e8; border-radius:7px; padding:12px; font-size:11px; font-family:monospace; color:#374151; white-space:pre; overflow-x:auto; max-height:220px;"></div>
+    </div>
+
+    <!-- STEP 4: manage ALL indexes -->
+    <div class="step" id="step4">
+      <div class="step-header">
+        <div class="step-num" style="background:#6b7280">4</div>
+        <div>
+          <div class="step-title">Administrer alle indekser</div>
+          <div class="step-sub">Aktiver, deaktiver eller fjern indekser — inkludert de innebygde</div>
+        </div>
+      </div>
+      <div id="manage-list"></div>
+      <div style="margin-top:10px; display:flex; gap:6px">
+        <button class="code-actions" style="display:contents">
+          <button onclick="manageAll(true)" style="padding:4px 10px; font-size:11px; font-family:inherit; border-radius:4px; cursor:pointer; border:1px solid #d1d5db; background:none; color:#374151;">Aktiver alle</button>
+          <button onclick="manageAll(false)" style="padding:4px 10px; font-size:11px; font-family:inherit; border-radius:4px; cursor:pointer; border:1px solid #d1d5db; background:none; color:#374151;">Deaktiver alle</button>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <span id="loading-text">Henter data fra SSB…</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ═══════════════════════════════════════════════════════════
+
+const MONTH_NO = ['','Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+const MONTH_SHORT = ['','Jan','Feb','Mar','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Des'];
+
+// All 7 index definitions
+const INDEX_DEFS = [
+  { key: '08655-20', tableId: '08655', code: '20', label: 'Elektro (08655)',        shortLabel: 'Elektro',   group: '08655 – Boliger' },
+  { key: '08655-28', tableId: '08655', code: '28', label: 'VVS / Rørlegger (08655)', shortLabel: 'VVS',      group: '08655 – Boliger' },
+  { key: '08655-30', tableId: '08655', code: '30', label: 'Tømrer / Bygg (08655)',   shortLabel: 'Tømrer',   group: '08655 – Boliger' },
+  { key: '08651-01', tableId: '08651', code: '01', label: 'Enebolig (08651)',         shortLabel: 'Enebolig', group: '08651 – Enebolig/Blokk' },
+  { key: '08651-02', tableId: '08651', code: '02', label: 'Blokkleilighet (08651)',   shortLabel: 'Blokk',    group: '08651 – Enebolig/Blokk' },
+  { key: '04534-1',  tableId: '04534', code: '1',  label: 'Totalindeks (04534)',      shortLabel: 'Total',    group: '04534 – Totalindeks' },
+  { key: '08653-18', tableId: '08653', code: '18', label: 'Anlegg (08653)',           shortLabel: 'Anlegg',   group: '08653 – Anlegg' },
+];
+
+const CHART_COLORS = [
+  '#009EB2','#0D2240','#f59e0b','#10b981','#8b5cf6','#ef4444','#f97316'
+];
+
+const TABLES = [
+  {
+    id: '08655', url: 'https://data.ssb.no/api/v0/no/table/08655/', labelKey: 'Arbeidstype',
+    payload: (period, codes) => ({ query: [
+      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['20','28','30'] } },
+      { code: 'ContentsCode', selection: { filter: 'item', values: ['Byggindeks'] } },
+      { code: 'Tid', selection: { filter: 'item', values: [period] } }
+    ], response: { format: 'json-stat2' } })
+  },
+  {
+    id: '08651', url: 'https://data.ssb.no/api/v0/no/table/08651/', labelKey: 'Arbeidstype',
+    payload: (period, codes) => ({ query: [
+      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['01','02'] } },
+      { code: 'ContentsCode', selection: { filter: 'item', values: ['Byggindeks'] } },
+      { code: 'Tid', selection: { filter: 'item', values: [period] } }
+    ], response: { format: 'json-stat2' } })
+  },
+  {
+    id: '04534', url: 'https://data.ssb.no/api/v0/no/table/04534/', labelKey: 'ArbType',
+    payload: (period, codes) => ({ query: [
+      { code: 'ArbType', selection: { filter: 'item', values: codes || ['1'] } },
+      { code: 'ContentsCode', selection: { filter: 'item', values: ['ByggKostInd'] } },
+      { code: 'Tid', selection: { filter: 'item', values: [period] } }
+    ], response: { format: 'json-stat2' } })
+  },
+  {
+    id: '08653', url: 'https://data.ssb.no/api/v0/no/table/08653/', labelKey: 'Arbeidstype',
+    payload: (period, codes) => ({ query: [
+      { code: 'Arbeidstype', selection: { filter: 'item', values: codes || ['18'] } },
+      { code: 'ContentsCode', selection: { filter: 'item', values: ['BKIIndex'] } },
+      { code: 'Tid', selection: { filter: 'item', values: [period] } }
+    ], response: { format: 'json-stat2' } })
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SHARED HELPERS
+// ═══════════════════════════════════════════════════════════
+
+function getPeriod() {
+  return `${document.getElementById('ctrl-year').value}M${document.getElementById('ctrl-month').value}`;
+}
+
+function setLoading(on, text) {
+  document.getElementById('loading-overlay').classList.toggle('show', on);
+  if (text) document.getElementById('loading-text').textContent = text;
+}
+
+function setStatus(state, text) {
+  document.getElementById('status-dot').className = 'dot ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+function showAlert(areaId, type, msg) {
+  document.getElementById(areaId).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+function clearAlert(areaId) { document.getElementById(areaId).innerHTML = ''; }
+
+async function postSSB(url, payload) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return resp.json();
+}
+
+function parseResult(data, labelKey) {
+  const values = data.value || [];
+  const dim = data.dimension || {};
+  const dimKey = dim[labelKey] || {};
+  const cat = dimKey.category || {};
+  const labelSection = cat.label || {};
+  const indexSection = cat.index || {};
+  const keys = Object.keys(labelSection).sort((a,b) => (indexSection[a]??0) - (indexSection[b]??0));
+  return keys.map((key, i) => ({
+    code: key,
+    label: labelSection[key],
+    value: (values[i] !== null && values[i] !== undefined) ? values[i] : null
+  }));
+}
+
+// Generate all month periods between two period strings "YYYYMmm"
+function periodRange(from, to) {
+  const [fy, fm] = from.split('M').map(Number);
+  const [ty, tm] = to.split('M').map(Number);
+  const periods = [];
+  let y = fy, m = fm;
+  while (y < ty || (y === ty && m <= tm)) {
+    periods.push(`${y}M${String(m).padStart(2,'0')}`);
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return periods;
+}
+
+function periodLabel(p) {
+  const [y, m] = p.split('M');
+  return `${MONTH_SHORT[parseInt(m)]} ${y}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAGE 1: OVERSIKT
+// ═══════════════════════════════════════════════════════════
+
+let _allEntries = [];
+
+function renderTable(tableId, entries, errors) {
+  const tbody = document.querySelector(`#tbl-${tableId} tbody`);
+  if (!tbody) return;
+  if (errors[tableId]) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty"><i class="ti ti-alert-circle" style="color:#f87171;margin-right:6px"></i>Feil: ${errors[tableId]}</td></tr>`;
+    return;
+  }
+  const rows = entries.filter(e => e.tableId === tableId);
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="empty">Ingen data.</td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.label}</td>
+      <td class="tbl-id">${r.code}</td>
+      <td class="val">${r.value !== null ? r.value.toFixed(1) : '—'}</td>
+      <td class="${r.value !== null ? 'status-ok' : 'status-err'}">
+        <i class="ti ${r.value !== null ? 'ti-circle-check' : 'ti-circle-x'}"></i>
+        ${r.value !== null ? 'OK' : 'Mangler'}
+      </td>
+    </tr>`).join('');
+}
+
+function renderMetrics(allEntries) {
+  const total = allEntries.length;
+  const withVal = allEntries.filter(e => e.value !== null).length;
+  const vals = allEntries.filter(e => e.value !== null).map(e => e.value);
+  const avg = vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+  document.getElementById('metric-grid').innerHTML = `
+    <div class="metric"><div class="metric-label">Datapunkter</div><div class="metric-value">${total}</div></div>
+    <div class="metric"><div class="metric-label">Med verdi</div><div class="metric-value">${withVal}</div></div>
+    <div class="metric"><div class="metric-label">Mangler</div><div class="metric-value" style="color:${total-withVal>0?'#dc2626':'#059669'}">${total-withVal}</div></div>
+    <div class="metric"><div class="metric-label">Snittindeks</div><div class="metric-value">${avg!==null?avg.toFixed(1):'—'}</div></div>
+    <div class="metric"><div class="metric-label">Tabeller</div><div class="metric-value">4</div></div>`;
+}
+
+function copyTable() {
+  const lines = [`SSB Indeksverdier – ${getPeriod()}`, ''];
+  const grouped = {};
+  for (const e of _allEntries) { if (!grouped[e.tableId]) grouped[e.tableId]=[]; grouped[e.tableId].push(e); }
+  for (const [tid, rows] of Object.entries(grouped)) {
+    lines.push(`Tabell ${tid}`,'Arbeidstype\tKode\tIndeksverdi');
+    for (const r of rows) lines.push(`${r.label}\t${r.code}\t${r.value!==null?r.value.toFixed(1):'N/A'}`);
+    lines.push('');
+  }
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '<i class="ti ti-check" style="margin-right:5px"></i>Kopiert!';
+    setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy" style="margin-right:5px"></i>Kopier'; }, 2000);
+  });
+}
+
+const MOCK_SINGLE = {
+  '08655': [ {code:'20',label:'Elektrisk installasjonsarbeid',value:214.3}, {code:'28',label:'Rørlegger- og VVS-arbeid',value:208.7}, {code:'30',label:'Tømrer- og bygningsarbeid',value:219.1} ],
+  '08651': [ {code:'01',label:'Enebolig',value:216.5}, {code:'02',label:'Blokkleilighet',value:211.8} ],
+  '04534': [ {code:'1',label:'Alle byggetyper (totalindeks)',value:215.2} ],
+  '08653': [ {code:'18',label:'Anleggsvirksomhet',value:203.6} ],
+};
+
+function loadMock() {
+  clearAlert('alert-area');
+  setStatus('green', 'Mock-data');
+  const allEntries = [];
+  for (const [tableId, rows] of Object.entries(MOCK_SINGLE)) for (const r of rows) allEntries.push({...r, tableId});
+  _allEntries = allEntries;
+  const m = document.getElementById('ctrl-month').value;
+  const y = document.getElementById('ctrl-year').value;
+  document.getElementById('period-label').textContent = `${MONTH_NO[parseInt(m)]} ${y}`;
+  document.getElementById('fetch-time').textContent = 'MOCK-DATA — ikke ekte SSB-tall';
+  document.getElementById('results-area').style.display = 'block';
+  document.getElementById('copy-btn').style.display = '';
+  for (const tbl of TABLES) renderTable(tbl.id, allEntries, {});
+  renderMetrics(allEntries);
+  showAlert('alert-area','warn','⚠️ Viser <strong>testdata</strong> — ikke ekte SSB-tall.');
+}
+
+async function fetchAll() {
+  clearAlert('alert-area');
+  setLoading(true, 'Henter data fra SSB…');
+  setStatus('yellow', 'Henter…');
+  const period = getPeriod();
+  const [year, month] = period.split('M');
+  const allEntries = [], errors = {};
+  await Promise.all(TABLES.map(async tbl => {
+    try {
+      const data = await postSSB(tbl.url, tbl.payload(period));
+      for (const e of parseResult(data, tbl.labelKey)) allEntries.push({...e, tableId: tbl.id});
+    } catch(err) { errors[tbl.id] = err.message; }
+  }));
+  setLoading(false);
+  const errCount = Object.keys(errors).length;
+  if (errCount === 4) { setStatus('red','SSB utilgjengelig'); showAlert('alert-area','err',`Alle kall feilet. Prøv igjen etter 08:15.`); return; }
+  if (errCount > 0) { setStatus('yellow',`${4-errCount}/4 OK`); showAlert('alert-area','warn',`${errCount} tabell(er) feilet.`); }
+  else { setStatus('green','SSB OK'); clearAlert('alert-area'); }
+  _allEntries = allEntries;
+  document.getElementById('period-label').textContent = `${MONTH_NO[parseInt(month)]} ${year}`;
+  document.getElementById('fetch-time').textContent = `Sist hentet: ${new Date().toLocaleTimeString('no-NO')}`;
+  document.getElementById('results-area').style.display = 'block';
+  document.getElementById('copy-btn').style.display = '';
+  for (const tbl of TABLES) renderTable(tbl.id, allEntries, errors);
+  renderMetrics(allEntries);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAGE 2: VEKSTANALYSE
+// ═══════════════════════════════════════════════════════════
+
+// growthData: { [indexKey]: { [period]: value } }
+let growthData = {};
+let growthPeriods = [];
+let growthChart = null;
+let chartMode = 'value'; // 'value' | 'change'
+let selectedKeys = new Set(INDEX_DEFS.map(d => d.key));
+
+// ── Picker ──────────────────────────────────────────────────
+
+function buildPicker() {
+  const list = document.getElementById('picker-list');
+  const groups = {};
+  for (const d of INDEX_DEFS) {
+    if (!groups[d.group]) groups[d.group] = [];
+    groups[d.group].push(d);
+  }
+  let html = '';
+  for (const [grp, defs] of Object.entries(groups)) {
+    html += `<div class="picker-group-label">${grp}</div>`;
+    for (const d of defs) {
+      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
+      const checked = selectedKeys.has(d.key) ? 'checked' : '';
+      html += `<label class="picker-item">
+        <input type="checkbox" value="${d.key}" ${checked} onchange="pickerToggle('${d.key}', this.checked)">
+        <span class="picker-swatch" style="background:${color}"></span>
+        ${d.label}
+      </label>`;
+    }
+  }
+  list.innerHTML = html;
+}
+
+function pickerToggle(key, checked) {
+  if (checked) selectedKeys.add(key); else selectedKeys.delete(key);
+  renderGrowthChart();
+  renderGrowthTable();
+}
+
+function pickerAll(on) {
+  selectedKeys = on ? new Set(INDEX_DEFS.map(d=>d.key)) : new Set();
+  document.querySelectorAll('#picker-list input[type=checkbox]').forEach(cb => cb.checked = on);
+  renderGrowthChart();
+  renderGrowthTable();
+}
+
+// ── Chart ───────────────────────────────────────────────────
+
+function setChartMode(mode) {
+  chartMode = mode;
+  document.getElementById('btn-mode-value').style.borderColor = mode==='value' ? '#009EB2' : '';
+  document.getElementById('btn-mode-value').style.color = mode==='value' ? '#009EB2' : '';
+  document.getElementById('btn-mode-change').style.borderColor = mode==='change' ? '#009EB2' : '';
+  document.getElementById('btn-mode-change').style.color = mode==='change' ? '#009EB2' : '';
+  renderGrowthChart();
+}
+
+function renderGrowthChart() {
+  const ctx = document.getElementById('growth-chart').getContext('2d');
+  const labels = growthPeriods.map(periodLabel);
+
+  const datasets = INDEX_DEFS
+    .filter(d => selectedKeys.has(d.key))
+    .map((d, i) => {
+      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
+      const raw = growthPeriods.map(p => growthData[d.key]?.[p] ?? null);
+      let data;
+      if (chartMode === 'change') {
+        data = raw.map((v, i) => {
+          if (i === 0 || v === null || raw[i-1] === null) return null;
+          return +(v - raw[i-1]).toFixed(2);
+        });
+      } else {
+        data = raw;
+      }
+      return {
+        label: d.shortLabel,
+        data,
+        borderColor: color,
+        backgroundColor: color + '18',
+        borderWidth: 2,
+        pointRadius: growthPeriods.length <= 12 ? 4 : 2,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        spanGaps: false,
+      };
+    });
+
+  if (growthChart) growthChart.destroy();
+  growthChart = new Chart(ctx, {
+    type: chartMode === 'change' ? 'bar' : 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              if (v === null) return `${ctx.dataset.label}: –`;
+              return chartMode === 'change'
+                ? `${ctx.dataset.label}: ${v >= 0 ? '+' : ''}${v.toFixed(2)}`
+                : `${ctx.dataset.label}: ${v.toFixed(1)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 11 } } },
+        y: {
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 11 },
+            callback: v => chartMode === 'change' ? (v >= 0 ? '+' : '') + v.toFixed(1) : v.toFixed(1)
+          }
+        }
+      }
+    }
+  });
+}
+
+// ── Growth Table ─────────────────────────────────────────────
+
+function renderGrowthTable() {
+  const activeDefs = INDEX_DEFS.filter(d => selectedKeys.has(d.key));
+  const thead = document.getElementById('growth-thead');
+  const tbody = document.getElementById('growth-tbody');
+
+  if (!activeDefs.length || !growthPeriods.length) {
+    thead.innerHTML = '';
+    tbody.innerHTML = `<tr><td class="empty" colspan="3">Ingen indekser valgt.</td></tr>`;
+    return;
+  }
+
+  // ── HEADER: blank stub | one month column per period ──────────
+  // Row 1: "Indeks" | Jan 2025 | Feb 2025 | …
+  let hRow = `<tr><th style="min-width:160px">Indeks</th>`;
+  for (let i = 0; i < growthPeriods.length; i++) {
+    hRow += `<th colspan="2" style="text-align:center; border-left:1px solid #e2e4e8">${periodLabel(growthPeriods[i])}</th>`;
+  }
+  hRow += `</tr>`;
+
+  // Row 2: blank | Verdi / Endring repeated
+  let hRow2 = `<tr><th></th>`;
+  for (let i = 0; i < growthPeriods.length; i++) {
+    hRow2 += `<th style="font-size:9px; border-left:1px solid #e2e4e8">Verdi</th><th style="font-size:9px">Endring</th>`;
+  }
+  hRow2 += `</tr>`;
+  thead.innerHTML = hRow + hRow2;
+
+  // ── BODY: one row per index ────────────────────────────────────
+  let rows = '';
+  for (const d of activeDefs) {
+    const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
+    rows += `<tr>
+      <td style="font-weight:600; color:#0D2240; border-left:3px solid ${color}; padding-left:10px; white-space:nowrap">
+        ${d.label}
+      </td>`;
+
+    for (let i = 0; i < growthPeriods.length; i++) {
+      const p    = growthPeriods[i];
+      const val  = growthData[d.key]?.[p] ?? null;
+      const prev = i > 0 ? (growthData[d.key]?.[growthPeriods[i-1]] ?? null) : null;
+      const change = (val !== null && prev !== null) ? +(val - prev).toFixed(2) : null;
+
+      const valCell = val !== null ? val.toFixed(1) : '—';
+
+      let changeCell;
+      if (change === null) {
+        changeCell = `<span class="chip-none">–</span>`;
+      } else if (change > 0) {
+        changeCell = `<span class="chip-pos"><i class="ti ti-arrow-up" style="font-size:10px"></i>+${change.toFixed(2)}</span>`;
+      } else if (change < 0) {
+        changeCell = `<span class="chip-neg"><i class="ti ti-arrow-down" style="font-size:10px"></i>${change.toFixed(2)}</span>`;
+      } else {
+        changeCell = `<span class="chip-zero">±0.00</span>`;
+      }
+
+      rows += `<td style="font-weight:600; border-left:1px solid #e2e4e8">${valCell}</td><td>${changeCell}</td>`;
+    }
+    rows += `</tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+function copyGrowthTable() {
+  const activeDefs = INDEX_DEFS.filter(d => selectedKeys.has(d.key));
+  // Header: Indeks | Jan 2025 (verdi) | Jan 2025 (endring) | …
+  const periodHeaders = growthPeriods.flatMap(p => [periodLabel(p) + ' (verdi)', periodLabel(p) + ' (endring)']);
+  const lines = ['Indeks\t' + periodHeaders.join('\t')];
+
+  for (const d of activeDefs) {
+    const cols = [d.label];
+    for (let i = 0; i < growthPeriods.length; i++) {
+      const p    = growthPeriods[i];
+      const val  = growthData[d.key]?.[p] ?? null;
+      const prev = i > 0 ? (growthData[d.key]?.[growthPeriods[i-1]] ?? null) : null;
+      const change = (val !== null && prev !== null) ? (val - prev).toFixed(2) : '';
+      cols.push(val !== null ? val.toFixed(1) : '', change);
+    }
+    lines.push(cols.join('\t'));
+  }
+  navigator.clipboard.writeText(lines.join('\n'));
+}
+
+// ── Fetch growth data ─────────────────────────────────────────
+
+async function fetchGrowth() {
+  const fromY = +document.getElementById('g-from-year').value;
+  const fromM = document.getElementById('g-from-month').value;
+  const toY   = +document.getElementById('g-to-year').value;
+  const toM   = document.getElementById('g-to-month').value;
+  const from  = `${fromY}M${fromM}`;
+  const to    = `${toY}M${toM}`;
+
+  if (fromY > toY || (fromY === toY && fromM > toM)) {
+    showAlert('growth-alert','err','«Fra»-dato må være før «til»-dato.'); return;
+  }
+
+  const periods = periodRange(from, to);
+  if (periods.length > 36) {
+    showAlert('growth-alert','warn',`Valgt periode er ${periods.length} måneder. Store spørringer tar lengre tid.`);
+  } else clearAlert('growth-alert');
+
+  // Group by table — fetch one request per table per period
+  // Optimise: SSB v0 doesn't support multi-period in filter 'item', 
+  // but we can use 'all' or fetch each month. We fetch all periods at once using filter 'item' with all periods.
+  // Actually SSB does allow multiple Tid values in one request!
+
+  const tableGroups = {};
+  for (const d of INDEX_DEFS) {
+    if (!tableGroups[d.tableId]) {
+      const tblDef = TABLES.find(t => t.id === d.tableId);
+      tableGroups[d.tableId] = { def: tblDef, codes: [], defs: [] };
+    }
+    tableGroups[d.tableId].codes.push(d.code);
+    tableGroups[d.tableId].defs.push(d);
+  }
+
+  const totalReqs = Object.keys(tableGroups).length;
+  let done = 0;
+  document.getElementById('fetch-progress').style.display = 'block';
+  document.getElementById('fetch-progress-bar').style.width = '0%';
+  setLoading(true, `Henter ${periods.length} måneder × 4 tabeller…`);
+  setStatus('yellow', 'Henter…');
+
+  const newData = {};
+  for (const key of INDEX_DEFS.map(d => d.key)) newData[key] = {};
+
+  await Promise.all(Object.values(tableGroups).map(async ({ def, codes, defs }) => {
+    try {
+      const payload = def.payload('', codes);
+      payload.query = payload.query.map(q =>
+        q.code === 'Tid' ? { code: 'Tid', selection: { filter: 'item', values: periods } } : q
+      );
+      const labelKey = def.labelKey;
+      payload.query = payload.query.map(q =>
+        (q.code === 'Arbeidstype' || q.code === 'ArbType' || q.code === labelKey)
+          ? { code: q.code, selection: { filter: 'item', values: codes } }
+          : q
+      );
+
+      const data = await postSSB(def.url, payload);
+
+      const dim = data.dimension || {};
+      const codeDim = dim[labelKey] || {};
+      const timeDim = dim['Tid'] || {};
+      const codeIndex = codeDim.category?.index || {};
+      const timeIndex = timeDim.category?.index || {};
+      const values = data.value || [];
+      const nPeriods = periods.length;
+
+      for (const d of defs) {
+        const ci = codeIndex[d.code] ?? null;
+        if (ci === null) continue;
+        for (const p of periods) {
+          const ti = timeIndex[p] ?? null;
+          if (ti === null) continue;
+          const v = values[ci * nPeriods + ti];
+          newData[d.key][p] = (v !== null && v !== undefined) ? v : null;
+        }
+      }
+    } catch(err) {
+      console.warn('Fetch error for', def.id, err.message);
+    }
+    done++;
+    document.getElementById('fetch-progress-bar').style.width = `${Math.round(done/totalReqs*100)}%`;
+  }));
+
+  setLoading(false);
+  document.getElementById('fetch-progress').style.display = 'none';
+  setStatus('green', 'SSB OK');
+
+  growthData = newData;
+  growthPeriods = periods;
+
+  document.getElementById('chart-range-label').textContent =
+    `${periodLabel(from)} – ${periodLabel(to)} (${periods.length} måneder)`;
+
+  document.getElementById('growth-results').style.display = 'block';
+  buildPicker();
+  setChartMode('value');
+  renderGrowthTable();
+}
+
+// ── MOCK GROWTH DATA ──────────────────────────────────────────
+
+function loadMockGrowth() {
+  // Generate 13 months of realistic mock data (Jan 2025 – Jan 2026)
+  const from = '2025M01', to = '2026M01';
+  const periods = periodRange(from, to);
+
+  const BASE = { '08655-20':210.0, '08655-28':204.5, '08655-30':215.0, '08651-01':212.0, '08651-02':207.5, '04534-1':211.0, '08653-18':199.5 };
+  const DRIFT = { '08655-20':0.35,'08655-28':0.30,'08655-30':0.38,'08651-01':0.33,'08651-02':0.28,'04534-1':0.32,'08653-18':0.25 };
+
+  const newData = {};
+  for (const d of INDEX_DEFS) {
+    newData[d.key] = {};
+    let v = BASE[d.key];
+    for (const p of periods) {
+      // small random walk + drift
+      v += DRIFT[d.key] + (Math.random() - 0.45) * 0.4;
+      newData[d.key][p] = +v.toFixed(1);
+    }
+  }
+
+  growthData = newData;
+  growthPeriods = periods;
+
+  document.getElementById('chart-range-label').textContent =
+    `${periodLabel(from)} – ${periodLabel(to)} (${periods.length} måneder) — TESTDATA`;
+
+  document.getElementById('growth-results').style.display = 'block';
+  showAlert('growth-alert','warn','⚠️ Viser <strong>testdata</strong> — ikke ekte SSB-tall.');
+
+  buildPicker();
+  setChartMode('value');
+  renderGrowthTable();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAGE 3: LEGG TIL TABELL
+// ═══════════════════════════════════════════════════════════
+
+let inspectedMeta  = null;   // raw metadata from SSB
+let inspectedId    = null;   // table ID string
+let customDefs     = [];     // extra INDEX_DEFS entries added by user
+
+// ── Step 1: fetch metadata ────────────────────────────────────
+
+async function inspectTable() {
+  const rawId = document.getElementById('custom-tbl-id').value.trim().toUpperCase();
+  if (!rawId) { showAlert('step1-alert','warn','Skriv inn et tabellnummer.'); return; }
+
+  clearAlert('step1-alert');
+  document.getElementById('step1-alert').innerHTML =
+    `<div style="font-size:12px;color:#6b7280"><span class="mini-spinner"></span>Henter metadata for tabell ${rawId}…</div>`;
+
+  try {
+    // SSB metadata endpoint
+    const url = `https://data.ssb.no/api/v0/no/table/${rawId}/`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: [], response: { format: 'json-stat2' } })
+    });
+    // We actually want the metadata, use GET on the v2 metadata endpoint
+    const metaResp = await fetch(`https://data.ssb.no/api/pxwebapi/v2/tables/${rawId}/metadata?lang=no`);
+    if (!metaResp.ok) throw new Error(`Tabell ${rawId} ikke funnet (HTTP ${metaResp.status})`);
+    const meta = await metaResp.json();
+
+    inspectedMeta = meta;
+    inspectedId   = rawId;
+    clearAlert('step1-alert');
+
+    // Mark step 1 done
+    document.getElementById('step1-num').textContent = '✓';
+    document.getElementById('step1-num').classList.add('done');
+
+    buildStep2(meta, rawId);
+
+  } catch(err) {
+    showAlert('step1-alert','err',`Kunne ikke hente tabell: ${err.message}`);
+  }
+}
+
+// ── Step 2: build variable + code pickers ────────────────────
+
+function buildStep2(meta, tableId) {
+  // Unlock step 2
+  document.getElementById('step2').classList.remove('locked');
+  document.getElementById('step2-num').classList.remove('muted');
+  document.getElementById('step2-num').textContent = '2';
+
+  // Meta box
+  const title = meta.label || meta.title || tableId;
+  document.getElementById('step2-meta').style.display = '';
+  document.getElementById('step2-meta').innerHTML =
+    `<strong>${tableId}</strong> — <span>${title}</span>`;
+
+  // Variables: filter out Tid and ContentsCode for the main var select
+  const variables = meta.variables || [];
+  const timeVar = variables.find(v => v.elimination === true || v.id === 'Tid' || v.type === 'Time');
+  const contentsVar = variables.find(v => v.id === 'ContentsCode' || v.type === 'Content');
+  const mainVars = variables.filter(v =>
+    v !== timeVar && v !== contentsVar && v.id !== 'Tid' && v.id !== 'ContentsCode'
+  );
+
+  // Populate var select
+  const varSel = document.getElementById('var-select');
+  varSel.innerHTML = mainVars.map(v => `<option value="${v.id}">${v.label || v.id}</option>`).join('');
+  varSel._vars = mainVars;
+
+  // Populate contents select
+  const contSel = document.getElementById('contents-select');
+  if (contentsVar && contentsVar.values) {
+    contSel.innerHTML = contentsVar.values.map(v => `<option value="${v.code}">${v.label || v.code}</option>`).join('');
+    contSel.style.display = '';
+    contSel.previousElementSibling.style.display = '';
+  } else {
+    contSel.innerHTML = '<option value="">— ingen innholdsvariabel —</option>';
+  }
+
+  onVarChange();
+}
+
+function onVarChange() {
+  const varSel = document.getElementById('var-select');
+  const vars = varSel._vars || [];
+  const selId = varSel.value;
+  const v = vars.find(x => x.id === selId);
+  if (!v) return;
+  buildCodeGrid(v);
+}
+
+function buildCodeGrid(variable) {
+  const grid = document.getElementById('code-grid');
+  const vals = variable.values || [];
+  grid.innerHTML = vals.map(v => `
+    <label class="code-item" onclick="toggleCodeItem(this)">
+      <input type="checkbox" value="${v.code}" checked>
+      <span>${v.label || v.code}</span>
+      <span class="code-id">${v.code}</span>
+    </label>`).join('');
+  updateCodeSelectionStyle();
+}
+
+function toggleCodeItem(el) {
+  const cb = el.querySelector('input');
+  // click fires before checkbox state changes, so we invert
+  cb.checked = !cb.checked;
+  el.classList.toggle('selected', cb.checked);
+}
+
+function updateCodeSelectionStyle() {
+  document.querySelectorAll('.code-item').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('input').checked);
+  });
+}
+
+function codesAll(on) {
+  document.querySelectorAll('.code-grid .code-item input').forEach(cb => cb.checked = on);
+  updateCodeSelectionStyle();
+}
+
+// ── Step 3: add selected codes as index entries ───────────────
+
+function addCodes() {
+  clearAlert('step2-alert');
+  const varSel   = document.getElementById('var-select');
+  const contSel  = document.getElementById('contents-select');
+  const varId    = varSel.value;
+  const vars     = varSel._vars || [];
+  const variable = vars.find(x => x.id === varId);
+  const contCode = contSel.value || null;
+  const tableId  = inspectedId;
+  const tableTitle = (inspectedMeta?.label || tableId).slice(0, 40);
+
+  const checked = [...document.querySelectorAll('.code-grid .code-item input:checked')];
+  if (!checked.length) { showAlert('step2-alert','warn','Velg minst én kode.'); return; }
+
+  let added = 0;
+  for (const cb of checked) {
+    const code  = cb.value;
+    const label = (variable?.values?.find(v => v.code === code)?.label || code);
+    const key   = `custom-${tableId}-${varId}-${code}`;
+
+    // Skip duplicates
+    if (INDEX_DEFS.find(d => d.key === key)) continue;
+
+    const colorIdx = (INDEX_DEFS.length) % CHART_COLORS.length;
+    const shortLabel = `${label.slice(0,18)} (${tableId})`;
+    const group  = `${tableId} – ${tableTitle}`;
+
+    const def = {
+      key, tableId, code,
+      label: `${label} (${tableId})`,
+      shortLabel,
+      group,
+      // Extra fields needed to build the SSB payload for custom tables
+      _varId: varId,
+      _contCode: contCode,
+      _custom: true,
+    };
+
+    INDEX_DEFS.push(def);
+    selectedKeys.add(key);
+    customDefs.push(def);
+    added++;
+  }
+
+  if (!added) { showAlert('step2-alert','info','Alle valgte koder er allerede lagt til.'); return; }
+
+  // Also register the table in TABLES if not already there
+  if (!TABLES.find(t => t.id === tableId)) {
+    TABLES.push({
+      id: tableId,
+      url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
+      labelKey: varId,
+      payload: (period, codes) => ({
+        query: [
+          { code: varId, selection: { filter: 'item', values: codes || [checked[0].value] } },
+          ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
+          { code: 'Tid', selection: { filter: 'item', values: [period] } }
+        ],
+        response: { format: 'json-stat2' }
+      })
+    });
+  }
+
+  showAlert('step2-alert','info',`✓ ${added} indeks(er) lagt til.`);
+  renderAddedList();
+
+  // Unlock step 3
+  document.getElementById('step3').classList.remove('locked');
+  document.getElementById('step3-num').classList.remove('muted');
+  document.getElementById('step3-num').classList.add('done');
+  document.getElementById('step3-num').textContent = '✓';
+}
+
+function removeCustomDef(key) {
+  const idx = INDEX_DEFS.findIndex(d => d.key === key);
+  if (idx !== -1) INDEX_DEFS.splice(idx, 1);
+  const cidx = customDefs.findIndex(d => d.key === key);
+  if (cidx !== -1) customDefs.splice(cidx, 1);
+  selectedKeys.delete(key);
+  renderAddedList();
+}
+
+function renderAddedList() {
+  const list = document.getElementById('added-list');
+  if (!customDefs.length) {
+    list.innerHTML = `<div class="empty" style="padding:16px">Ingen lagt til ennå.</div>`;
+  } else {
+    list.innerHTML = customDefs.map((d) => {
+      const color = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
+      return `<div class="added-item">
+        <span class="ai-swatch" style="background:${color}"></span>
+        <span class="ai-label">${d.label}</span>
+        <span class="ai-tag">${d.tableId} · ${d.code}</span>
+        <button class="ai-remove" onclick="removeCustomDef('${d.key}')" title="Fjern">✕</button>
+      </div>`;
+    }).join('');
+  }
+  renderManageList();
+}
+
+function renderManageList() {
+  const container = document.getElementById('manage-list');
+  if (!container) return;
+
+  // Group all INDEX_DEFS by their group label
+  const groups = {};
+  for (const d of INDEX_DEFS) {
+    if (!groups[d.group]) groups[d.group] = [];
+    groups[d.group].push(d);
+  }
+
+  let html = '';
+  for (const [grp, defs] of Object.entries(groups)) {
+    html += `<div class="manage-group-label">${grp}</div>`;
+    for (const d of defs) {
+      const color   = CHART_COLORS[INDEX_DEFS.indexOf(d) % CHART_COLORS.length];
+      const active  = selectedKeys.has(d.key);
+      const isBuiltIn = !d._custom;
+      html += `<div class="manage-item ${active ? '' : 'disabled'}" id="mi-${d.key}">
+        <span class="mi-swatch" style="background:${color}"></span>
+        <span class="mi-label">${d.label}</span>
+        <span class="mi-tag">${d.tableId} · ${d.code}</span>
+        ${isBuiltIn ? `<span class="mi-built">innebygd</span>` : ''}
+        <label class="manage-toggle" title="${active ? 'Deaktiver' : 'Aktiver'}">
+          <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleManage('${d.key}', this.checked)">
+          <span class="manage-toggle-track"></span>
+        </label>
+        <button class="mi-remove" onclick="removeAnyDef('${d.key}')" title="Fjern permanent" ${isBuiltIn ? 'disabled' : ''}>✕</button>
+      </div>`;
+    }
+  }
+  container.innerHTML = html || `<div class="empty" style="padding:16px">Ingen indekser.</div>`;
+}
+
+function toggleManage(key, on) {
+  if (on) selectedKeys.add(key); else selectedKeys.delete(key);
+  const row = document.getElementById('mi-' + key);
+  if (row) row.classList.toggle('disabled', !on);
+}
+
+function removeAnyDef(key) {
+  // Only allow removal of custom defs (built-ins have button disabled)
+  removeCustomDef(key);
+}
+
+function manageAll(on) {
+  for (const d of INDEX_DEFS) {
+    if (on) selectedKeys.add(d.key); else selectedKeys.delete(d.key);
+  }
+  renderManageList();
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  CONFIG.JSON  — load on startup, export on demand
+// ═══════════════════════════════════════════════════════════
+
+// Schema for config.json:
+// {
+//   "indexes": [
+//     {
+//       "tableId": "07221",
+//       "varId":   "Næring",
+//       "contCode": "KPI",        // optional ContentsCode value
+//       "codes": [
+//         { "code": "00", "label": "Alle næringer" }
+//       ]
+//     }
+//   ]
+// }
+
+async function loadConfig() {
+  try {
+    const resp = await fetch('./config.json?_=' + Date.now());
+    if (!resp.ok) return; // no config.json — that's fine
+    const cfg = await resp.json();
+    const entries = cfg.indexes || [];
+    if (!entries.length) return;
+
+    let loaded = 0;
+    for (const entry of entries) {
+      const { tableId, varId, contCode, codes } = entry;
+      if (!tableId || !varId || !Array.isArray(codes)) continue;
+
+      // Register table in TABLES if not present
+      if (!TABLES.find(t => t.id === tableId)) {
+        TABLES.push({
+          id: tableId,
+          url: `https://data.ssb.no/api/v0/no/table/${tableId}/`,
+          labelKey: varId,
+          payload: (period, cds) => ({
+            query: [
+              { code: varId, selection: { filter: 'item', values: cds } },
+              ...(contCode ? [{ code: 'ContentsCode', selection: { filter: 'item', values: [contCode] } }] : []),
+              { code: 'Tid', selection: { filter: 'item', values: [period] } }
+            ],
+            response: { format: 'json-stat2' }
+          })
+        });
+      }
+
+      for (const { code, label } of codes) {
+        const key = `custom-${tableId}-${varId}-${code}`;
+        if (INDEX_DEFS.find(d => d.key === key)) continue;
+        const def = {
+          key, tableId, code,
+          label: `${label} (${tableId})`,
+          shortLabel: label.slice(0, 18),
+          group: `${tableId} – (config)`,
+          _varId: varId,
+          _contCode: contCode || null,
+          _custom: true,
+          _fromConfig: true,
+        };
+        INDEX_DEFS.push(def);
+        selectedKeys.add(key);
+        customDefs.push(def);
+        loaded++;
+      }
+    }
+
+    if (loaded > 0) {
+      // Unlock step 3 and show banner
+      document.getElementById('step3').classList.remove('locked');
+      document.getElementById('step3-num').classList.remove('muted');
+      document.getElementById('step3-num').classList.add('done');
+      document.getElementById('step3-num').textContent = '✓';
+      const banner = document.getElementById('config-loaded-banner');
+      banner.style.display = '';
+      banner.textContent = `✓ ${loaded} indeks(er) lastet fra config.json`;
+      renderAddedList();
+    }
+  } catch(e) {
+    // silently ignore — config.json is optional
+    console.info('config.json not found or invalid, skipping.');
+  }
+}
+
+function buildConfigJson() {
+  // Group customDefs by tableId+varId+contCode
+  const groups = {};
+  for (const d of customDefs) {
+    const gk = `${d.tableId}||${d._varId}||${d._contCode || ''}`;
+    if (!groups[gk]) groups[gk] = { tableId: d.tableId, varId: d._varId, contCode: d._contCode || null, codes: [] };
+    groups[gk].codes.push({ code: d.code, label: d.label.replace(/ \(\d+\)$/, '') });
+  }
+  const indexes = Object.values(groups).map(g => {
+    const obj = { tableId: g.tableId, varId: g.varId };
+    if (g.contCode) obj.contCode = g.contCode;
+    obj.codes = g.codes;
+    return obj;
+  });
+  return JSON.stringify({ indexes }, null, 2);
+}
+
+function exportConfig() {
+  const json = buildConfigJson();
+  // Show preview
+  const preview = document.getElementById('config-json-preview');
+  preview.style.display = 'block';
+  preview.textContent = json;
+  // Trigger download
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'config.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyConfigJson() {
+  const json = buildConfigJson();
+  const preview = document.getElementById('config-json-preview');
+  preview.style.display = 'block';
+  preview.textContent = json;
+  navigator.clipboard.writeText(json).then(() => {
+    const btn = document.getElementById('copy-config-btn');
+    btn.innerHTML = '<i class="ti ti-check" style="margin-right:5px"></i>Kopiert!';
+    setTimeout(() => { btn.innerHTML = '<i class="ti ti-copy" style="margin-right:5px"></i>Kopier JSON'; }, 2000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+(async function init() {
+  const now = new Date();
+  let m = now.getMonth();
+  let y = now.getFullYear();
+  if (m === 0) { m = 12; y--; }
+  const ms = String(m).padStart(2,'0');
+  document.getElementById('ctrl-month').value = ms;
+  document.getElementById('ctrl-year').value = y;
+
+  let fy = y, fm = m - 12;
+  if (fm <= 0) { fm += 12; fy--; }
+  document.getElementById('g-from-month').value = String(fm).padStart(2,'0');
+  document.getElementById('g-from-year').value = fy;
+  document.getElementById('g-to-month').value = ms;
+  document.getElementById('g-to-year').value = y;
+
+  setChartMode('value');
+
+  // Populate manage list immediately with built-in indexes
+  renderManageList();
+
+  // Load custom indexes from config.json (silently skipped if missing)
+  await loadConfig();
+})();
+</script>
+</body>
+</html>
