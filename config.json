@@ -1,0 +1,39 @@
+{
+  "indexes": [
+    {
+      "tableId": "08655",
+      "varId": "Arbeidstype",
+      "contCode": "Byggindeks",
+      "codes": [
+        { "code": "30", "label": "Elektrikararbeid, i alt" },
+        { "code": "28", "label": "Røyrleggjararbeid, i alt" },
+        { "code": "20", "label": "Bustadblokk i alt" }
+      ]
+    },
+    {
+      "tableId": "04534",
+      "varId": "ArbType",
+      "contCode": "ByggKostInd",
+      "codes": [
+        { "code": "1", "label": "Røyrleggjararbeid i kontor- og forretningsbygg" }
+      ]
+    },
+    {
+      "tableId": "08653",
+      "varId": "Arbeidstype",
+      "contCode": "BKIIndex",
+      "codes": [
+        { "code": "18", "label": "Elektrikararbeid, i alt" }
+      ]
+    },
+    {
+      "tableId": "08651",
+      "varId": "Arbeidstype",
+      "contCode": "Byggindeks",
+      "codes": [
+        { "code": "01", "label": "I alt" },
+        { "code": "02", "label": "Arbeidskraft" }
+      ]
+    }
+  ]
+}
